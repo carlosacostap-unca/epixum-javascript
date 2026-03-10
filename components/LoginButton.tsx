@@ -16,15 +16,50 @@ export default function LoginButton() {
       // Si el usuario no tiene rol (primera vez), se lo asignamos
       if (!authData.record.role) {
         try {
-          // Asignar rol de estudiante
-          await pb.collection("users").update(authData.record.id, {
+          const updateData: any = {
             role: "estudiante"
-          });
-          // Actualizar el modelo local con el nuevo rol
+          };
+
+          // Extraer nombre y apellido de Google si están disponibles
+          const meta = authData.meta;
+          if (meta) {
+            // Google suele enviar 'given_name' y 'family_name' en el meta
+            // También puede enviar 'name' completo
+            const firstName = meta.givenName || meta.given_name || "";
+            const lastName = meta.familyName || meta.family_name || "";
+            const fullName = meta.name || "";
+
+            if (firstName) updateData.firstName = firstName;
+            if (lastName) updateData.lastName = lastName;
+
+            // Aseguramos que el campo 'name' tenga el nombre completo
+            if (firstName || lastName) {
+                updateData.name = `${firstName} ${lastName}`.trim();
+            } else if (fullName) {
+                updateData.name = fullName;
+                // Intentamos separar si no tenemos first/last explícitos
+                const parts = fullName.split(' ');
+                if (parts.length > 1) {
+                    updateData.firstName = parts[0];
+                    updateData.lastName = parts.slice(1).join(' ');
+                } else {
+                    updateData.firstName = fullName;
+                }
+            }
+          }
+
+          // Asignar rol de estudiante y datos de perfil
+          await pb.collection("users").update(authData.record.id, updateData);
+          
+          // Actualizar el modelo local con los nuevos datos
           authData.record.role = "estudiante";
+          if (updateData.firstName) authData.record.firstName = updateData.firstName;
+          if (updateData.lastName) authData.record.lastName = updateData.lastName;
+          if (updateData.name) authData.record.name = updateData.name;
+          
           pb.authStore.save(pb.authStore.token, authData.record);
         } catch (err) {
-          console.error("No se pudo asignar el rol automáticamente. Verifica las API Rules.", err);
+          console.error("No se pudo asignar el rol o datos automáticamente. Verifica las API Rules.", err);
         }
       }
 
