@@ -18,6 +18,15 @@ export default function AssignmentForm({ assignment, onClose, isEmbedded = false
   const [loading, setLoading] = useState(false);
   const [description, setDescription] = useState(assignment?.description || "");
 
+  // Helper to convert UTC date string to local datetime-local string
+  const getLocalDateTime = (isoDate: string) => {
+    if (!isoDate) return '';
+    const date = new Date(isoDate);
+    const offset = date.getTimezoneOffset();
+    const localDate = new Date(date.getTime() - (offset * 60 * 1000));
+    return localDate.toISOString().slice(0, 16);
+  };
+
   async function handleSubmit(formData: FormData) {
     setLoading(true);
     setError(null);
@@ -81,6 +90,19 @@ export default function AssignmentForm({ assignment, onClose, isEmbedded = false
             />
           </div>
 
+          <div>
+            <label htmlFor="dueDate" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+              Fecha límite de entrega
+            </label>
+            <input
+              type="datetime-local"
+              name="dueDate"
+              id="dueDate"
+              defaultValue={assignment?.dueDate ? getLocalDateTime(assignment.dueDate) : ''}
+              className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100"
+            />
+          </div>
+
           <div className="flex justify-end gap-3 mt-6">
             {onClose && (
               <button
@@ -139,6 +161,19 @@ export default function AssignmentForm({ assignment, onClose, isEmbedded = false
           <RichTextEditor
             content={description}
             onChange={setDescription}
+          />
+        </div>
+
+        <div>
+          <label htmlFor="dueDate" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+            Fecha límite de entrega
+          </label>
+          <input
+            type="datetime-local"
+            name="dueDate"
+            id="dueDate"
+            defaultValue={assignment?.dueDate ? getLocalDateTime(assignment.dueDate) : ''}
+            className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100"
           />
         </div>
 

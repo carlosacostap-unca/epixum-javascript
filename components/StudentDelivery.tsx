@@ -11,9 +11,10 @@ interface StudentDeliveryProps {
   delivery: Delivery | null;
   studentName: string;
   assignmentTitle: string;
+  dueDate?: string;
 }
 
-export default function StudentDelivery({ assignmentId, delivery, studentName, assignmentTitle }: StudentDeliveryProps) {
+export default function StudentDelivery({ assignmentId, delivery, studentName, assignmentTitle, dueDate }: StudentDeliveryProps) {
   const [isEditing, setIsEditing] = useState(!delivery);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -27,8 +28,14 @@ export default function StudentDelivery({ assignmentId, delivery, studentName, a
   const router = useRouter();
 
   const isDelivered = !!delivery;
+  const isPastDue = dueDate ? new Date() > new Date(dueDate) : false;
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (isPastDue) {
+      setError("El plazo de entrega ha finalizado");
+      return;
+    }
+
     if (e.target.files && e.target.files.length > 0) {
       // files[0].webkitRelativePath usually starts with the folder name
       const path = e.target.files[0].webkitRelativePath;
@@ -59,6 +66,11 @@ export default function StudentDelivery({ assignmentId, delivery, studentName, a
   const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
+
+    if (isPastDue) {
+      setError("El plazo de entrega ha finalizado");
+      return;
+    }
     
     const items = e.dataTransfer.items;
     if (!items) return;
@@ -147,6 +159,11 @@ export default function StudentDelivery({ assignmentId, delivery, studentName, a
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     
+    if (isPastDue) {
+      setError("El plazo de entrega ha finalizado");
+      return;
+    }
+
     if (selectedFiles.length === 0 && !delivery) {
       setError("Debes seleccionar una carpeta para subir");
       return;
@@ -387,10 +404,15 @@ export default function StudentDelivery({ assignmentId, delivery, studentName, a
 
             <button
                 onClick={() => setIsEditing(true)}
-                className="shrink-0 px-4 py-2 text-sm font-medium text-zinc-700 bg-white border border-zinc-300 rounded-lg hover:bg-zinc-50 hover:text-zinc-900 transition-colors shadow-sm flex items-center gap-2"
+                disabled={isPastDue}
+                className={`shrink-0 px-4 py-2 text-sm font-medium rounded-lg shadow-sm flex items-center gap-2 transition-colors ${
+                  isPastDue 
+                    ? "text-zinc-400 bg-zinc-100 border-zinc-200 cursor-not-allowed dark:bg-zinc-800 dark:text-zinc-500 dark:border-zinc-700" 
+                    : "text-zinc-700 bg-white border border-zinc-300 hover:bg-zinc-50 hover:text-zinc-900 dark:bg-zinc-800 dark:text-zinc-200 dark:border-zinc-600 dark:hover:bg-zinc-700"
+                }`}
             >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                Modificar Entrega
+                {isPastDue ? "Plazo finalizado" : "Modificar Entrega"}
             </button>
           </div>
         </div>
@@ -402,13 +424,15 @@ export default function StudentDelivery({ assignmentId, delivery, studentName, a
             </label>
             <div 
               className={`relative border-2 border-dashed rounded-xl p-8 transition-all ${
-                isDragging 
-                  ? "border-purple-500 bg-purple-50 dark:bg-purple-900/20" 
-                  : "border-zinc-300 dark:border-zinc-700 hover:border-purple-400 dark:hover:border-purple-500"
+                isPastDue
+                  ? "bg-zinc-100 border-zinc-200 cursor-not-allowed dark:bg-zinc-800 dark:border-zinc-700"
+                  : isDragging 
+                    ? "border-purple-500 bg-purple-50 dark:bg-purple-900/20" 
+                    : "border-zinc-300 dark:border-zinc-700 hover:border-purple-400 dark:hover:border-purple-500"
               }`}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
+              onDragOver={!isPastDue ? handleDragOver : undefined}
+              onDragLeave={!isPastDue ? handleDragLeave : undefined}
+              onDrop={!isPastDue ? handleDrop : undefined}
             >
                 <input
                   type="file"
@@ -417,12 +441,15 @@ export default function StudentDelivery({ assignmentId, delivery, studentName, a
                   {...({ webkitdirectory: "", directory: "" } as any)}
                   className="hidden"
                   onChange={handleFileChange}
+                  disabled={isPastDue}
                 />
                 <div className="flex flex-col items-center justify-center text-center gap-3">
                   <div className={`p-4 rounded-full ${
-                    selectedFolderName 
-                      ? "bg-purple-100 text-purple-600 dark:bg-purple-900/40 dark:text-purple-400" 
-                      : "bg-zinc-100 text-zinc-400 dark:bg-zinc-800 dark:text-zinc-500"
+                    isPastDue
+                      ? "bg-zinc-200 text-zinc-400 dark:bg-zinc-700 dark:text-zinc-500"
+                      : selectedFolderName 
+                        ? "bg-purple-100 text-purple-600 dark:bg-purple-900/40 dark:text-purple-400" 
+                        : "bg-zinc-100 text-zinc-400 dark:bg-zinc-800 dark:text-zinc-500"
                   }`}>
                     {selectedFolderName ? (
                         <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>
@@ -441,26 +468,35 @@ export default function StudentDelivery({ assignmentId, delivery, studentName, a
                                 setSelectedFiles([]);
                                 if (fileInputRef.current) fileInputRef.current.value = "";
                             }}
-                            className="text-xs text-red-500 hover:text-red-700 hover:underline"
+                            disabled={isPastDue}
+                            className="text-xs text-red-500 hover:text-red-700 hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             Eliminar selección
                         </button>
                     </div>
                   ) : (
                     <>
-                        <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                            <button
-                                type="button"
-                                onClick={() => fileInputRef.current?.click()}
-                                className="font-semibold text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300 hover:underline"
-                            >
-                                Selecciona una carpeta
-                            </button>
-                            {" "}o arrástrala aquí
-                        </p>
-                        <p className="text-xs text-zinc-500">
-                            Se comprimirá automáticamente en un archivo ZIP
-                        </p>
+                        {isPastDue ? (
+                            <p className="text-sm text-red-500 font-medium">
+                                El plazo de entrega ha finalizado. No se admiten más envíos.
+                            </p>
+                        ) : (
+                            <>
+                                <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                                    <button
+                                        type="button"
+                                        onClick={() => fileInputRef.current?.click()}
+                                        className="font-semibold text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300 hover:underline"
+                                    >
+                                        Selecciona una carpeta
+                                    </button>
+                                    {" "}o arrástrala aquí
+                                </p>
+                                <p className="text-xs text-zinc-500">
+                                    Se comprimirá automáticamente en un archivo ZIP
+                                </p>
+                            </>
+                        )}
                     </>
                   )}
                 </div>
@@ -485,8 +521,12 @@ export default function StudentDelivery({ assignmentId, delivery, studentName, a
                     )}
                     <button
                     type="submit"
-                    disabled={loading}
-                    className="px-6 py-2 text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2 shadow-sm"
+                    disabled={loading || isPastDue}
+                    className={`px-6 py-2 text-sm font-medium text-white rounded-lg shadow-sm transition-colors flex items-center gap-2 ${
+                        isPastDue
+                        ? "bg-zinc-400 cursor-not-allowed"
+                        : "bg-purple-600 hover:bg-purple-700 disabled:opacity-50"
+                    }`}
                     >
                     {delivery ? "Modificar Entrega" : "Realizar Entrega"}
                     </button>

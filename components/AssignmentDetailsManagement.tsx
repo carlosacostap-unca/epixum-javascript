@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import AssignmentForm from "./AssignmentForm";
 import LinkForm from "./LinkForm";
 import InquiryList from "./inquiries/InquiryList";
+import FormattedDate from "./FormattedDate";
 
 interface AssignmentDetailsManagementProps {
   user: User;
@@ -54,6 +55,13 @@ export default function AssignmentDetailsManagement({ user, assignment, links, i
         <h1 className="text-3xl font-extrabold tracking-tight lg:text-4xl mb-4 pr-12">
           {assignment.title}
         </h1>
+        {assignment.dueDate && (
+            <div className="flex items-center gap-2 mb-4 text-zinc-500 dark:text-zinc-400">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                <span className="font-medium">Fecha límite:</span>
+                <FormattedDate date={assignment.dueDate} showTime={true} />
+            </div>
+        )}
         <div 
           className="prose dark:prose-invert max-w-3xl mb-8"
           dangerouslySetInnerHTML={{ __html: assignment.description }}
