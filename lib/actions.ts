@@ -64,7 +64,11 @@ export async function getResourceDownloadUrl(linkId: string) {
     let key = link.url;
     if (link.url.startsWith('http')) {
         const urlObj = new URL(link.url);
-        key = urlObj.pathname.split('/').pop() || '';
+        // Extract filename from path
+        const pathname = urlObj.pathname;
+        const filename = pathname.split('/').pop() || '';
+        // Decode URI component to handle spaces and special characters
+        key = decodeURIComponent(filename);
     }
 
     if (!key) {

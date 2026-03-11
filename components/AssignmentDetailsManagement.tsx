@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Assignment, Link as LinkType, User, Inquiry } from "@/types";
 import Link from "next/link";
-import { deleteLink } from "@/lib/actions";
+import { deleteLink, getResourceDownloadUrl } from "@/lib/actions";
 import { useRouter } from "next/navigation";
 import AssignmentForm from "./AssignmentForm";
 import LinkForm from "./LinkForm";
@@ -28,6 +28,29 @@ export default function AssignmentDetailsManagement({ user, assignment, links, i
     if (confirm("¿Estás seguro de que quieres eliminar este enlace?")) {
       await deleteLink(linkId, assignment.id, 'assignment');
       router.refresh();
+    }
+  };
+
+  const isFileResource = (link: LinkType) => {
+    return link.type === 'file' || 
+           link.url.includes('idrivee2.com') || 
+           link.url.includes('epixum-javascript-storage');
+  };
+
+  const handleResourceClick = async (e: React.MouseEvent, link: LinkType) => {
+    if (isFileResource(link)) {
+        e.preventDefault();
+        try {
+            const result = await getResourceDownloadUrl(link.id);
+            if (result.success && result.url) {
+                window.open(result.url, '_blank');
+            } else {
+                alert("No se pudo descargar el archivo.");
+            }
+        } catch (error) {
+            console.error(error);
+            alert("Error al descargar el archivo.");
+        }
     }
   };
 
@@ -110,18 +133,24 @@ export default function AssignmentDetailsManagement({ user, assignment, links, i
                      </button>
                  </div>
 
-                <a href={link.url} target="_blank" rel="noopener noreferrer" className="block h-full">
+                <a 
+                    href={isFileResource(link) ? '#' : link.url} 
+                    target={isFileResource(link) ? undefined : "_blank"}
+                    rel={isFileResource(link) ? undefined : "noopener noreferrer"}
+                    className="block h-full"
+                    onClick={(e) => handleResourceClick(e, link)}
+                >
                     <div className="flex items-center justify-between mb-2">
                         <div>
                             <h3 className="text-lg font-bold group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors pr-8">
                             {link.title}
                             </h3>
                             <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-2 truncate max-w-[200px]">
-                                {link.url}
+                                {isFileResource(link) ? link.url.split('/').pop() : link.url}
                             </p>
                         </div>
-                        <span className="px-2 py-1 text-xs font-medium rounded-full bg-zinc-100 text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300">
-                            LINK
+                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${isFileResource(link) ? 'bg-purple-100 text-purple-600 dark:bg-purple-900 dark:text-purple-200' : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300'}`}>
+                            {isFileResource(link) ? 'ARCHIVO' : 'LINK'}
                         </span>
                     </div>
                 </a>
