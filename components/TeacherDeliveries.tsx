@@ -3,6 +3,7 @@
 import { Delivery } from "@/types";
 import { useState } from "react";
 import { getDeliveryDownloadUrl } from "@/lib/actions";
+import Link from "next/link";
 
 interface TeacherDeliveriesProps {
   deliveries: Delivery[];
@@ -73,6 +74,12 @@ export default function TeacherDeliveries({ deliveries, assignmentId }: TeacherD
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-300 uppercase tracking-wider">
                 Fecha
               </th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-300 uppercase tracking-wider">
+                Evaluación
+              </th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-300 uppercase tracking-wider">
+                Acciones
+              </th>
             </tr>
           </thead>
           <tbody className="bg-white dark:bg-zinc-800 divide-y divide-zinc-200 dark:divide-zinc-700">
@@ -123,12 +130,32 @@ export default function TeacherDeliveries({ deliveries, assignmentId }: TeacherD
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">
                     {new Date(delivery.created).toLocaleDateString()}
                   </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    {delivery.status === 'published' ? (
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                        Enviada ({delivery.grade}/10) {delivery.verdict ? `- ${delivery.verdict}` : ''}
+                      </span>
+                    ) : delivery.status === 'draft' ? (
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
+                        Borrador
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-400">
+                        Pendiente
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <Link href={`/assignments/${assignmentId}/deliveries/${delivery.id}`} className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">
+                      Ver detalles
+                    </Link>
+                  </td>
                 </tr>
                 );
               })
             ) : (
               <tr>
-                <td colSpan={5} className="px-6 py-4 text-center text-sm text-zinc-500 dark:text-zinc-400">
+                <td colSpan={4} className="px-6 py-4 text-center text-sm text-zinc-500 dark:text-zinc-400">
                   No hay entregas registradas
                 </td>
               </tr>

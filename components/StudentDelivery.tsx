@@ -5,6 +5,8 @@ import { Delivery } from "@/types";
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import JSZip from "jszip";
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface StudentDeliveryProps {
   assignmentId: string;
@@ -31,18 +33,36 @@ export default function StudentDelivery({ assignmentId, delivery, studentName, a
   const isPastDue = dueDate ? new Date() > new Date(dueDate) : false;
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setError(null);
     if (isPastDue) {
       setError("El plazo de entrega ha finalizado");
       return;
     }
 
     if (e.target.files && e.target.files.length > 0) {
-      // files[0].webkitRelativePath usually starts with the folder name
-      const path = e.target.files[0].webkitRelativePath;
-      const folderName = path.split('/')[0];
-      setSelectedFolderName(`${folderName} (${e.target.files.length} archivos)`);
+      const fileList = Array.from(e.target.files);
       
-      const filesArray = Array.from(e.target.files).map(file => ({
+      // La propiedad webkitRelativePath nos indica si los archivos provienen de una carpeta.
+      // Si algún archivo no tiene un path con al menos una barra ('/'), significa que se seleccionó un archivo suelto, no una carpeta.
+      const isFolderSelection = fileList.every(f => f.webkitRelativePath && f.webkitRelativePath.includes('/'));
+
+      if (!isFolderSelection) {
+         setError("Por favor, selecciona únicamente una carpeta. No se permiten archivos sueltos (como .zip, .rar, etc).");
+         setSelectedFiles([]);
+         setSelectedFolderName(null);
+         // Limpiar el input
+         if (fileInputRef.current) {
+             fileInputRef.current.value = "";
+         }
+         return;
+      }
+
+      // files[0].webkitRelativePath usually starts with the folder name
+      const path = fileList[0].webkitRelativePath;
+      const folderName = path.split('/')[0];
+      setSelectedFolderName(`${folderName} (${fileList.length} archivos)`);
+      
+      const filesArray = fileList.map(file => ({
         file,
         path: file.webkitRelativePath
       }));
@@ -66,6 +86,7 @@ export default function StudentDelivery({ assignmentId, delivery, studentName, a
   const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
+    setError(null);
 
     if (isPastDue) {
       setError("El plazo de entrega ha finalizado");
@@ -73,7 +94,15 @@ export default function StudentDelivery({ assignmentId, delivery, studentName, a
     }
     
     const items = e.dataTransfer.items;
-    if (!items) return;
+    if (!items || items.length === 0) return;
+
+    const entry = items[0].webkitGetAsEntry();
+    if (!entry || !entry.isDirectory) {
+         setError("Por favor, arrastra únicamente una carpeta. No se permiten archivos sueltos (como .zip, .rar, etc).");
+         setSelectedFiles([]);
+         setSelectedFolderName(null);
+         return;
+    }
 
     const files: { file: File, path: string }[] = [];
     const queue: { entry: any, path: string }[] = [];
@@ -82,7 +111,7 @@ export default function StudentDelivery({ assignmentId, delivery, studentName, a
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
       if (item.kind === 'file') {
-        const entry = item.webkitGetAsEntry ? item.webkitGetAsEntry() : (item as any).getAsFileSystemHandle ? await (item as any).getAsFileSystemHandle() : null;
+        const entry = item.webkitGetAsEntry();
         if (entry) {
           queue.push({ entry, path: entry.name });
         }
@@ -415,6 +444,49 @@ export default function StudentDelivery({ assignmentId, delivery, studentName, a
                 {isPastDue ? "Plazo finalizado" : "Modificar Entrega"}
             </button>
           </div>
+
+          {delivery.status === 'published' && delivery.feedback && (
+            <div className="mt-8 pt-6 border-t border-zinc-200 dark:border-zinc-700">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-purple-900 dark:text-purple-100 flex items-center gap-2">
+                  <svg className="w-5 h-5 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                  </svg>
+                  Devolución del Docente
+                </h3>
+                <div className="flex items-center gap-4">
+                  {delivery.verdict && (
+                    <div className="flex flex-col items-end">
+                      <span className="text-xs text-purple-600 dark:text-purple-400 font-semibold uppercase tracking-wider mb-1">Veredicto</span>
+                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${
+                        delivery.verdict === 'Aprobado' 
+                          ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                          : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                      }`}>
+                        {delivery.verdict}
+                      </span>
+                    </div>
+                  )}
+                  {delivery.grade !== undefined && (
+                    <div className="flex flex-col items-end border-l border-purple-200 dark:border-purple-800/50 pl-4">
+                      <span className="text-xs text-purple-600 dark:text-purple-400 font-semibold uppercase tracking-wider">Nota</span>
+                      <span className="text-3xl font-black text-purple-700 dark:text-purple-300 leading-none mt-1">
+                        {delivery.grade}
+                        <span className="text-lg text-purple-400 dark:text-purple-600">/10</span>
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="bg-purple-50/50 dark:bg-purple-900/10 border border-purple-100 dark:border-purple-900/30 rounded-lg p-5">
+                <div className="prose prose-purple dark:prose-invert max-w-none text-zinc-800 dark:text-zinc-200 leading-relaxed text-sm">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {delivery.feedback}
+                  </ReactMarkdown>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="bg-zinc-50 dark:bg-zinc-900/50 rounded-xl p-6 border border-zinc-200 dark:border-zinc-700">

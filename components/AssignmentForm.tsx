@@ -81,6 +81,20 @@ export default function AssignmentForm({ assignment, onClose, isEmbedded = false
           </div>
 
           <div>
+            <label htmlFor="systemPrompt" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+              Prompt de Sistema (Preevaluación IA)
+            </label>
+            <textarea
+              name="systemPrompt"
+              id="systemPrompt"
+              rows={4}
+              defaultValue={assignment?.systemPrompt}
+              placeholder="Instrucciones para la IA al evaluar esta entrega..."
+              className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100"
+            />
+          </div>
+
+          <div>
             <label htmlFor="description" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
               Descripción
             </label>
@@ -150,6 +164,20 @@ export default function AssignmentForm({ assignment, onClose, isEmbedded = false
             id="title"
             defaultValue={assignment?.title}
             required
+            className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="systemPrompt" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+            Prompt de Sistema (Preevaluación IA)
+          </label>
+          <textarea
+            name="systemPrompt"
+            id="systemPrompt"
+            rows={4}
+            defaultValue={assignment?.systemPrompt}
+            placeholder="Instrucciones para la IA al evaluar esta entrega..."
             className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100"
           />
         </div>

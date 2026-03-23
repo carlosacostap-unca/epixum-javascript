@@ -231,6 +231,7 @@ export async function createAssignment(formData: FormData) {
   const title = formData.get('title') as string;
   const description = formData.get('description') as string;
   const dueDate = formData.get('dueDate') as string;
+  const systemPrompt = formData.get('systemPrompt') as string;
 
   if (!title) {
      return { success: false, error: 'Title is required' };
@@ -240,14 +241,18 @@ export async function createAssignment(formData: FormData) {
     const data: any = {
       title,
       description,
+      systemPrompt: systemPrompt || "",
     };
     if (dueDate) data.dueDate = new Date(dueDate).toISOString();
     
     await pb.collection('assignments').create(data);
     revalidatePath('/');
     return { success: true };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Failed to create assignment:', error);
+    if (error.response?.data) {
+      console.error('PocketBase validation errors:', JSON.stringify(error.response.data, null, 2));
+    }
     return { success: false, error: 'Failed to create assignment' };
   }
 }
@@ -263,11 +268,13 @@ export async function updateAssignment(assignmentId: string, formData: FormData)
   const title = formData.get('title') as string;
   const description = formData.get('description') as string;
   const dueDate = formData.get('dueDate') as string;
+  const systemPrompt = formData.get('systemPrompt') as string;
 
   try {
     const data: any = {
       title,
       description,
+      systemPrompt: systemPrompt || "",
     };
     if (dueDate) data.dueDate = new Date(dueDate).toISOString();
 
@@ -276,9 +283,33 @@ export async function updateAssignment(assignmentId: string, formData: FormData)
     revalidatePath('/');
     revalidatePath(`/assignments/${assignmentId}`);
     return { success: true };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Failed to update assignment:', error);
+    if (error.response?.data) {
+      console.error('PocketBase validation errors:', JSON.stringify(error.response.data, null, 2));
+    }
     return { success: false, error: 'Failed to update assignment' };
+  }
+}
+
+export async function updateAssignmentSystemPrompt(assignmentId: string, systemPrompt: string) {
+  const pb = await createServerClient();
+  const user = pb.authStore.model;
+
+  if (!user || (user.role !== 'docente' && user.role !== 'admin')) {
+    throw new Error("Unauthorized");
+  }
+
+  try {
+    await pb.collection('assignments').update(assignmentId, {
+      systemPrompt: systemPrompt || "",
+    });
+    
+    revalidatePath(`/assignments/${assignmentId}`);
+    return { success: true };
+  } catch (error: any) {
+    console.error('Failed to update system prompt:', error);
+    return { success: false, error: 'Failed to update system prompt' };
   }
 }
 
@@ -479,5 +510,37 @@ export async function updateDelivery(deliveryId: string, formData: FormData) {
   } catch (error) {
     console.error('Failed to update delivery:', error);
     return { success: false, error: 'Failed to update delivery' };
+  }
+}
+
+export async function updateDeliveryEvaluation(deliveryId: string, grade: number, feedback: string, verdict: 'Aprobado' | 'Corregir y reenviar' | undefined, status: 'draft' | 'published') {
+  const pb = await createServerClient();
+  const user = pb.authStore.model;
+
+  if (!user || (user.role !== 'docente' && user.role !== 'admin')) {
+    return { success: false, error: 'Unauthorized' };
+  }
+
+  if (!deliveryId || deliveryId.length !== 15) {
+    return { success: false, error: 'Invalid delivery ID' };
+  }
+
+  try {
+    const delivery = await pb.collection('deliveries').getOne(deliveryId);
+
+    
+    await pb.collection('deliveries').update(deliveryId, {
+      grade,
+      feedback,
+      verdict,
+      status
+    });
+    
+    revalidatePath(`/assignments/${delivery.assignment}`);
+    revalidatePath(`/assignments/${delivery.assignment}/deliveries/${deliveryId}`);
+    return { success: true };
+  } catch (error) {
+    console.error('Failed to update delivery evaluation:', error);
+    return { success: false, error: 'Failed to update delivery evaluation' };
   }
 }

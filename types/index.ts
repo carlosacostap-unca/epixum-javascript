@@ -43,6 +43,7 @@ export interface Assignment extends BaseModel {
   title: string;
   description: string;
   dueDate?: string; // Adding dueDate as it might be useful without sprints
+  systemPrompt?: string; // Prompt de sistema para preevaluación con IA
   // Expanding relations
   expand?: {
     links?: Link[];
@@ -54,6 +55,10 @@ export interface Delivery extends BaseModel {
   assignment: string;
   student: string;
   repositoryUrl: string;
+  grade?: number;
+  feedback?: string;
+  verdict?: 'Aprobado' | 'Corregir y reenviar';
+  status?: 'pending' | 'draft' | 'published';
   expand?: {
     student?: User;
   };
