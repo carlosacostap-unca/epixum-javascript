@@ -23,7 +23,11 @@ export default async function AssignmentPage({ params }: { params: Promise<{ id:
   let userDelivery: Delivery | null = null;
   
   try {
-    assignment = await getAssignment(id);
+    const fetchedAssignment = await getAssignment(id);
+    if (!fetchedAssignment) {
+        return notFound();
+    }
+    assignment = fetchedAssignment;
     links = await getLinks(id, 'assignment');
     inquiries = await getInquiries({ assignmentId: id });
     
