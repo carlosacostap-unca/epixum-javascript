@@ -85,14 +85,14 @@ export async function getResourceDownloadUrl(linkId: string) {
 }
 
 export async function getDeliveryDownloadUrl(deliveryId: string) {
-  const pb = await createServerClient();
-  const user = pb.authStore.model;
-
-  if (!user) {
-    return { success: false, error: 'Unauthorized' };
-  }
-
   try {
+    const pb = await createServerClient();
+    const user = pb.authStore.model;
+
+    if (!user) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
     const delivery = await pb.collection('deliveries').getOne(deliveryId);
 
     // Check permissions: Student can access their own, Teacher/Admin can access all
@@ -102,8 +102,16 @@ export async function getDeliveryDownloadUrl(deliveryId: string) {
 
     // Extract key from repositoryUrl
     // Assuming repositoryUrl is like https://endpoint/bucket/filename.zip
+    if (!delivery.repositoryUrl) {
+      return { success: false, error: 'No repository URL found' };
+    }
+
     const url = new URL(delivery.repositoryUrl);
-    const key = url.pathname.split('/').pop();
+    let key = url.pathname.split('/').pop();
+    
+    if (key) {
+        key = decodeURIComponent(key);
+    }
 
     if (!key) {
         return { success: false, error: 'Invalid file key' };
@@ -114,7 +122,7 @@ export async function getDeliveryDownloadUrl(deliveryId: string) {
 
   } catch (error) {
     console.error('Failed to get download URL:', error);
-    return { success: false, error: 'Failed to get download URL' };
+    return { success: false, error: 'Failed to get download URL: ' + (error instanceof Error ? error.message : String(error)) };
   }
 }
 

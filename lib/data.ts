@@ -82,8 +82,13 @@ export async function getAllAssignments() {
 
 export async function getAssignment(id: string) {
   const pb = await createServerClient();
-  const record = await pb.collection('assignments').getOne<Assignment>(id);
-  return record;
+  try {
+    const record = await pb.collection('assignments').getOne<Assignment>(id);
+    return record;
+  } catch (error) {
+    console.error('Error fetching assignment:', error);
+    return null;
+  }
 }
 
 export async function getLinks(parentId: string, parentType: 'class' | 'assignment' = 'class') {
