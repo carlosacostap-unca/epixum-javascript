@@ -445,7 +445,7 @@ export default function StudentDelivery({ assignmentId, delivery, studentName, a
             </button>
           </div>
 
-          {delivery.status === 'published' && delivery.feedback && (
+          {delivery.status === 'published' && (delivery.feedback || delivery.grade !== undefined || delivery.verdict) && (
             <div className="mt-8 pt-6 border-t border-zinc-200 dark:border-zinc-700">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-bold text-purple-900 dark:text-purple-100 flex items-center gap-2">
@@ -478,13 +478,15 @@ export default function StudentDelivery({ assignmentId, delivery, studentName, a
                   )}
                 </div>
               </div>
-              <div className="bg-purple-50/50 dark:bg-purple-900/10 border border-purple-100 dark:border-purple-900/30 rounded-lg p-5">
-                <div className="prose prose-purple dark:prose-invert max-w-none text-zinc-800 dark:text-zinc-200 leading-relaxed text-sm">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                    {delivery.feedback}
-                  </ReactMarkdown>
+              {delivery.feedback && (
+                <div className="bg-purple-50/50 dark:bg-purple-900/10 border border-purple-100 dark:border-purple-900/30 rounded-lg p-5">
+                  <div className="prose prose-purple dark:prose-invert max-w-none text-zinc-800 dark:text-zinc-200 leading-relaxed text-sm">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {delivery.feedback}
+                    </ReactMarkdown>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           )}
         </div>
