@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { updateAssignmentSystemPrompt, getDeliveryDownloadUrl, updateDeliveryEvaluation } from '@/lib/actions';
 import { generateAIEvaluation } from '@/app/actions/openai';
+import type { DeliveryVerdict } from '@/types';
 import JSZip from 'jszip';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -13,7 +14,7 @@ interface AIPreevaluationClientProps {
   initialPrompt: string;
   initialGrade?: number;
   initialFeedback?: string;
-  initialVerdict?: 'Aprobado' | 'Corregir y reenviar';
+  initialVerdict?: DeliveryVerdict;
   initialStatus?: 'pending' | 'draft' | 'published';
 }
 
@@ -38,7 +39,7 @@ export default function AIPreevaluationClient({
   
   // AI Evaluation State
   const [isEvaluating, setIsEvaluating] = useState(false);
-  const [evaluationResult, setEvaluationResult] = useState<{ nota: number; devolucion: string; verdicto?: 'Aprobado' | 'Corregir y reenviar'; status?: string } | null>(
+  const [evaluationResult, setEvaluationResult] = useState<{ nota: number; devolucion: string; verdicto?: DeliveryVerdict; status?: string } | null>(
     initialGrade !== undefined && initialFeedback 
       ? { nota: initialGrade, devolucion: initialFeedback, verdicto: initialVerdict, status: initialStatus }
       : null
@@ -50,7 +51,7 @@ export default function AIPreevaluationClient({
   const [isSavingEvaluation, setIsSavingEvaluation] = useState(false);
   const [editedNota, setEditedNota] = useState<number>(initialGrade || 0);
   const [editedDevolucion, setEditedDevolucion] = useState<string>(initialFeedback || '');
-  const [editedVerdicto, setEditedVerdicto] = useState<'Aprobado' | 'Corregir y reenviar' | undefined>(initialVerdict);
+  const [editedVerdicto, setEditedVerdicto] = useState<DeliveryVerdict | undefined>(initialVerdict);
   
   const hasAttemptedGeneration = useRef(false);
 
@@ -525,18 +526,19 @@ export default function AIPreevaluationClient({
             {isEditingEvaluation ? (
               <select
                 value={editedVerdicto || ''}
-                onChange={(e) => setEditedVerdicto(e.target.value as 'Aprobado' | 'Corregir y reenviar')}
+                onChange={(e) => setEditedVerdicto(e.target.value as DeliveryVerdict)}
                 className="w-full sm:w-auto px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border-2 border-purple-200 dark:border-purple-800 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 text-zinc-800 dark:text-zinc-200 font-medium"
               >
                 <option value="" disabled>Selecciona un veredicto</option>
                 <option value="Aprobado">Aprobado</option>
                 <option value="Corregir y reenviar">Corregir y reenviar</option>
+                <option value="Desaprobado">Desaprobado</option>
               </select>
             ) : (
               <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${
                 evaluationResult?.verdicto === 'Aprobado' 
                   ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                  : evaluationResult?.verdicto === 'Corregir y reenviar'
+                  : evaluationResult?.verdicto === 'Corregir y reenviar' || evaluationResult?.verdicto === 'Desaprobado'
                     ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
                     : 'bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-400'
               }`}>

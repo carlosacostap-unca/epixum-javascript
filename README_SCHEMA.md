@@ -73,6 +73,10 @@ Para que el rol "Docente" pueda gestionar el contenido, debes configurar las sig
     - `assignment`: Relation (Single, Required) -> Collection: `assignments`
     - `student`: Relation (Single, Required) -> Collection: `users`
     - `repositoryUrl`: URL (Required)
+    - `grade`: Number (Optional)
+    - `feedback`: Text (Optional)
+    - `verdict`: Select (options: "Aprobado", "Corregir y reenviar", "Desaprobado")
+    - `status`: Select (options: "pending", "draft", "published")
 - **Constraints**:
     - Unique index on `assignment` + `student` (Un estudiante solo puede tener una entrega por TP)
 - **API Rules**:

@@ -3,6 +3,7 @@
 import { createServerClient } from "@/lib/pocketbase-server";
 import { revalidatePath } from "next/cache";
 import { getPresignedUploadUrl, getPresignedDownloadUrl, configureBucketCors } from "./s3";
+import type { DeliveryVerdict } from "@/types";
 
 export async function ensureCorsConfigured() {
   try {
@@ -499,12 +500,20 @@ export async function updateDelivery(deliveryId: string, formData: FormData) {
   }
 
   try {
-    // Check deadline
+    // Check deadline and final evaluation state
     const currentDelivery = await pb.collection('deliveries').getOne(deliveryId);
     const assignment = await pb.collection('assignments').getOne(currentDelivery.assignment);
+
+    if (currentDelivery.student !== user.id && user.role !== 'admin') {
+        return { success: false, error: 'Unauthorized' };
+    }
     
     if (assignment.dueDate && new Date() > new Date(assignment.dueDate)) {
         return { success: false, error: 'El plazo de entrega ha finalizado' };
+    }
+
+    if (currentDelivery.status === 'published' && currentDelivery.verdict === 'Desaprobado') {
+        return { success: false, error: 'La entrega fue desaprobada y no admite reenvío' };
     }
 
     const data = {
@@ -521,7 +530,7 @@ export async function updateDelivery(deliveryId: string, formData: FormData) {
   }
 }
 
-export async function updateDeliveryEvaluation(deliveryId: string, grade: number, feedback: string, verdict: 'Aprobado' | 'Corregir y reenviar' | undefined, status: 'draft' | 'published') {
+export async function updateDeliveryEvaluation(deliveryId: string, grade: number, feedback: string, verdict: DeliveryVerdict | undefined, status: 'draft' | 'published') {
   const pb = await createServerClient();
   const user = pb.authStore.model;
 

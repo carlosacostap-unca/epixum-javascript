@@ -45,7 +45,7 @@ export async function generateAIEvaluation(systemPrompt: string, userPrompt: str
               },
               verdicto: {
                 type: "string",
-                enum: ["Aprobado", "Corregir y reenviar"],
+                enum: ["Aprobado", "Corregir y reenviar", "Desaprobado"],
                 description: "El veredicto final de la evaluación"
               }
             },

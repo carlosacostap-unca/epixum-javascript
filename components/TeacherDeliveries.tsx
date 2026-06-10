@@ -132,7 +132,11 @@ export default function TeacherDeliveries({ deliveries, assignmentId }: TeacherD
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
                     {delivery.status === 'published' ? (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        delivery.verdict === 'Desaprobado'
+                          ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900'
+                          : 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                      }`}>
                         Enviada ({delivery.grade}/10) {delivery.verdict ? `- ${delivery.verdict}` : ''}
                       </span>
                     ) : delivery.status === 'draft' ? (

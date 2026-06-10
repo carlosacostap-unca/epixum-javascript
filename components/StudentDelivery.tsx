@@ -31,11 +31,13 @@ export default function StudentDelivery({ assignmentId, delivery, studentName, a
 
   const isDelivered = !!delivery;
   const isPastDue = dueDate ? new Date() > new Date(dueDate) : false;
+  const isFailedFinal = delivery?.status === 'published' && delivery.verdict === 'Desaprobado';
+  const cannotEdit = isPastDue || isFailedFinal;
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setError(null);
-    if (isPastDue) {
-      setError("El plazo de entrega ha finalizado");
+    if (cannotEdit) {
+      setError(isFailedFinal ? "La entrega fue desaprobada y no admite reenvío" : "El plazo de entrega ha finalizado");
       return;
     }
 
@@ -88,8 +90,8 @@ export default function StudentDelivery({ assignmentId, delivery, studentName, a
     setIsDragging(false);
     setError(null);
 
-    if (isPastDue) {
-      setError("El plazo de entrega ha finalizado");
+    if (cannotEdit) {
+      setError(isFailedFinal ? "La entrega fue desaprobada y no admite reenvío" : "El plazo de entrega ha finalizado");
       return;
     }
     
@@ -188,8 +190,8 @@ export default function StudentDelivery({ assignmentId, delivery, studentName, a
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     
-    if (isPastDue) {
-      setError("El plazo de entrega ha finalizado");
+    if (cannotEdit) {
+      setError(isFailedFinal ? "La entrega fue desaprobada y no admite reenvío" : "El plazo de entrega ha finalizado");
       return;
     }
 
@@ -433,15 +435,15 @@ export default function StudentDelivery({ assignmentId, delivery, studentName, a
 
             <button
                 onClick={() => setIsEditing(true)}
-                disabled={isPastDue}
+                disabled={cannotEdit}
                 className={`shrink-0 px-4 py-2 text-sm font-medium rounded-lg shadow-sm flex items-center gap-2 transition-colors ${
-                  isPastDue 
+                  cannotEdit
                     ? "text-zinc-400 bg-zinc-100 border-zinc-200 cursor-not-allowed dark:bg-zinc-800 dark:text-zinc-500 dark:border-zinc-700" 
                     : "text-zinc-700 bg-white border border-zinc-300 hover:bg-zinc-50 hover:text-zinc-900 dark:bg-zinc-800 dark:text-zinc-200 dark:border-zinc-600 dark:hover:bg-zinc-700"
                 }`}
             >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                {isPastDue ? "Plazo finalizado" : "Modificar Entrega"}
+                {isFailedFinal ? "Desaprobado" : isPastDue ? "Plazo finalizado" : "Modificar Entrega"}
             </button>
           </div>
 
@@ -461,7 +463,9 @@ export default function StudentDelivery({ assignmentId, delivery, studentName, a
                       <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${
                         delivery.verdict === 'Aprobado' 
                           ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                          : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                          : delivery.verdict === 'Desaprobado'
+                            ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900'
+                            : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
                       }`}>
                         {delivery.verdict}
                       </span>
@@ -498,15 +502,15 @@ export default function StudentDelivery({ assignmentId, delivery, studentName, a
             </label>
             <div 
               className={`relative border-2 border-dashed rounded-xl p-8 transition-all ${
-                isPastDue
+                cannotEdit
                   ? "bg-zinc-100 border-zinc-200 cursor-not-allowed dark:bg-zinc-800 dark:border-zinc-700"
                   : isDragging 
                     ? "border-purple-500 bg-purple-50 dark:bg-purple-900/20" 
                     : "border-zinc-300 dark:border-zinc-700 hover:border-purple-400 dark:hover:border-purple-500"
               }`}
-              onDragOver={!isPastDue ? handleDragOver : undefined}
-              onDragLeave={!isPastDue ? handleDragLeave : undefined}
-              onDrop={!isPastDue ? handleDrop : undefined}
+              onDragOver={!cannotEdit ? handleDragOver : undefined}
+              onDragLeave={!cannotEdit ? handleDragLeave : undefined}
+              onDrop={!cannotEdit ? handleDrop : undefined}
             >
                 <input
                   type="file"
@@ -515,11 +519,11 @@ export default function StudentDelivery({ assignmentId, delivery, studentName, a
                   {...({ webkitdirectory: "", directory: "" } as any)}
                   className="hidden"
                   onChange={handleFileChange}
-                  disabled={isPastDue}
+                  disabled={cannotEdit}
                 />
                 <div className="flex flex-col items-center justify-center text-center gap-3">
                   <div className={`p-4 rounded-full ${
-                    isPastDue
+                    cannotEdit
                       ? "bg-zinc-200 text-zinc-400 dark:bg-zinc-700 dark:text-zinc-500"
                       : selectedFolderName 
                         ? "bg-purple-100 text-purple-600 dark:bg-purple-900/40 dark:text-purple-400" 
@@ -542,7 +546,7 @@ export default function StudentDelivery({ assignmentId, delivery, studentName, a
                                 setSelectedFiles([]);
                                 if (fileInputRef.current) fileInputRef.current.value = "";
                             }}
-                            disabled={isPastDue}
+                            disabled={cannotEdit}
                             className="text-xs text-red-500 hover:text-red-700 hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             Eliminar selección
@@ -550,9 +554,9 @@ export default function StudentDelivery({ assignmentId, delivery, studentName, a
                     </div>
                   ) : (
                     <>
-                        {isPastDue ? (
+                        {cannotEdit ? (
                             <p className="text-sm text-red-500 font-medium">
-                                El plazo de entrega ha finalizado. No se admiten más envíos.
+                                {isFailedFinal ? "La entrega fue desaprobada. No se admiten nuevos envíos." : "El plazo de entrega ha finalizado. No se admiten más envíos."}
                             </p>
                         ) : (
                             <>
@@ -595,9 +599,9 @@ export default function StudentDelivery({ assignmentId, delivery, studentName, a
                     )}
                     <button
                     type="submit"
-                    disabled={loading || isPastDue}
+                    disabled={loading || cannotEdit}
                     className={`px-6 py-2 text-sm font-medium text-white rounded-lg shadow-sm transition-colors flex items-center gap-2 ${
-                        isPastDue
+                        cannotEdit
                         ? "bg-zinc-400 cursor-not-allowed"
                         : "bg-purple-600 hover:bg-purple-700 disabled:opacity-50"
                     }`}

@@ -7,6 +7,7 @@ export interface BaseModel {
 }
 
 export type UserRole = 'admin' | 'docente' | 'estudiante';
+export type DeliveryVerdict = 'Aprobado' | 'Corregir y reenviar' | 'Desaprobado';
 
 export interface User extends BaseModel {
   username: string;
@@ -57,7 +58,7 @@ export interface Delivery extends BaseModel {
   repositoryUrl: string;
   grade?: number;
   feedback?: string;
-  verdict?: 'Aprobado' | 'Corregir y reenviar';
+  verdict?: DeliveryVerdict;
   status?: 'pending' | 'draft' | 'published';
   expand?: {
     student?: User;
