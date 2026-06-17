@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getAllAssignments, getAllDeliveries, getStudents } from "@/lib/data";
 import { getCurrentUser } from "@/lib/pocketbase-server";
-import type { Delivery } from "@/types";
+import type { Assignment, Delivery } from "@/types";
 import DashboardCursadaTable from "./DashboardCursadaTable";
 
 export const dynamic = "force-dynamic";
@@ -33,6 +33,16 @@ function getDeliveryStatus(delivery?: Delivery): CourseStatus {
   return "Evaluacion pendiente";
 }
 
+function getAssignmentNumber(assignment: Assignment) {
+  const match = assignment.title.match(/\d+/g);
+
+  if (!match) {
+    return Number.MAX_SAFE_INTEGER;
+  }
+
+  return Number(match[match.length - 1]);
+}
+
 export default async function DashboardCursadaPage() {
   const user = await getCurrentUser();
 
@@ -45,6 +55,15 @@ export default async function DashboardCursadaPage() {
     getAllAssignments(),
     getAllDeliveries(),
   ]);
+  const sortedAssignments = [...assignments].sort((first, second) => {
+    const numberDiff = getAssignmentNumber(first) - getAssignmentNumber(second);
+
+    if (numberDiff !== 0) {
+      return numberDiff;
+    }
+
+    return first.title.localeCompare(second.title);
+  });
 
   const deliveryByStudentAndAssignment = new Map<string, Delivery>();
 
@@ -57,7 +76,7 @@ export default async function DashboardCursadaPage() {
   }
 
   const rows = students.map((student) => {
-    const statuses = assignments.map((assignment) => {
+    const statuses = sortedAssignments.map((assignment) => {
       const delivery = deliveryByStudentAndAssignment.get(
         `${student.id}:${assignment.id}`
       );
@@ -119,7 +138,7 @@ export default async function DashboardCursadaPage() {
           </div>
           <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg px-4 py-3">
             <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
-              {assignments.length}
+              {sortedAssignments.length}
             </div>
             <div className="text-xs uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
               Trabajos
@@ -151,7 +170,7 @@ export default async function DashboardCursadaPage() {
           </p>
         </div>
 
-        <DashboardCursadaTable assignments={assignments} rows={rows} />
+        <DashboardCursadaTable assignments={sortedAssignments} rows={rows} />
       </div>
     </div>
   );
