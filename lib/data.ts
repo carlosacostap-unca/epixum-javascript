@@ -116,6 +116,35 @@ export async function getDeliveries(assignmentId: string) {
    }
 }
 
+export async function getApprovedDeliveries() {
+  const pb = await createServerClient();
+  try {
+    const records = await pb.collection('deliveries').getFullList<Delivery>({
+      filter: 'status = "published" && verdict = "Aprobado"',
+      sort: 'student',
+    });
+
+    return records;
+  } catch (error) {
+    console.error('Error fetching approved deliveries:', error);
+    return [];
+  }
+}
+
+export async function getAllDeliveries() {
+  const pb = await createServerClient();
+  try {
+    const records = await pb.collection('deliveries').getFullList<Delivery>({
+      sort: '-updated',
+    });
+
+    return records;
+  } catch (error) {
+    console.error('Error fetching all deliveries:', error);
+    return [];
+  }
+}
+
 export async function getUserDelivery(assignmentId: string, userId: string) {
   const pb = await createServerClient();
   try {

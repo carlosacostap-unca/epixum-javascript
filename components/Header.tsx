@@ -13,12 +13,25 @@ export default function Header() {
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
+    const clearInvalidSession = () => {
+      pb.authStore.clear();
+      document.cookie = "pb_auth=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+      setUser(null);
+      router.push("/login");
+      router.refresh();
+    };
+
     // Ensure we have the latest auth state from cookie
     pb.authStore.loadFromCookie(document.cookie);
     
     // Refresh user data from server to get latest role
     const refreshUser = async () => {
       if (pb.authStore.isValid && pb.authStore.model) {
+        if (!pb.authStore.model.id) {
+          clearInvalidSession();
+          return;
+        }
+
         try {
           const updatedUser = await pb.collection('users').getOne(pb.authStore.model.id);
           // Update auth store with fresh data
@@ -26,8 +39,17 @@ export default function Header() {
           // Update cookie
           document.cookie = pb.authStore.exportToCookie({ httpOnly: false });
           setUser(updatedUser as unknown as User);
-        } catch (e) {
-          console.error("Failed to refresh user data", e);
+        } catch (error: unknown) {
+          const status = typeof error === "object" && error !== null && "status" in error
+            ? (error as { status?: number }).status
+            : undefined;
+
+          if (status === 401 || status === 403 || status === 404) {
+            clearInvalidSession();
+            return;
+          }
+
+          console.warn("Failed to refresh user data", error);
           setUser(pb.authStore.model as unknown as User);
         }
       } else {
@@ -45,7 +67,7 @@ export default function Header() {
     return () => {
       unsubscribe();
     };
-  }, []);
+  }, [router]);
 
   // Don't show header on login page
   if (pathname === "/login") {
