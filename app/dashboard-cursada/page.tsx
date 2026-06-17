@@ -12,6 +12,7 @@ type CourseStatus =
   | "Evaluacion pendiente"
   | "Entrega pendiente"
   | "Reenvio pendiente";
+type StudentCourseState = "OK" | "Fuera de carrera" | "Complicado";
 
 function getDeliveryStatus(delivery?: Delivery): CourseStatus {
   if (!delivery) {
@@ -41,6 +42,25 @@ function getAssignmentNumber(assignment: Assignment) {
   }
 
   return Number(match[match.length - 1]);
+}
+
+function getStudentCourseState(statuses: { status: CourseStatus }[]) {
+  const approvedCount = statuses.filter((item) => item.status === "Aprobado")
+    .length;
+  const hasAssignments = statuses.length > 0;
+  const hasOnlyPendingDeliveries =
+    hasAssignments &&
+    statuses.every((item) => item.status === "Entrega pendiente");
+
+  if (approvedCount >= 3) {
+    return "OK";
+  }
+
+  if (hasOnlyPendingDeliveries) {
+    return "Fuera de carrera";
+  }
+
+  return "Complicado";
 }
 
 export default async function DashboardCursadaPage() {
@@ -87,11 +107,14 @@ export default async function DashboardCursadaPage() {
       };
     });
 
+    const approvedCount = statuses.filter((item) => item.status === "Aprobado")
+      .length;
+
     return {
       student,
       statuses,
-      approvedCount: statuses.filter((item) => item.status === "Aprobado")
-        .length,
+      approvedCount,
+      courseState: getStudentCourseState(statuses) as StudentCourseState,
     };
   });
 
