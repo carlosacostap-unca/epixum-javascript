@@ -67,6 +67,22 @@ function getStudentCourseState(statuses: { status: CourseStatus }[]) {
   return "Complicado";
 }
 
+function getStudentDisplayName(student: {
+  name?: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  username?: string;
+}) {
+  return (
+    student.name ||
+    `${student.firstName || ""} ${student.lastName || ""}`.trim() ||
+    student.email ||
+    student.username ||
+    ""
+  );
+}
+
 export default async function DashboardCursadaPage() {
   const user = await getCurrentUser();
 
@@ -99,28 +115,36 @@ export default async function DashboardCursadaPage() {
     }
   }
 
-  const rows = students.map((student) => {
-    const statuses = sortedAssignments.map((assignment) => {
-      const delivery = deliveryByStudentAndAssignment.get(
-        `${student.id}:${assignment.id}`
-      );
+  const rows = students
+    .map((student) => {
+      const statuses = sortedAssignments.map((assignment) => {
+        const delivery = deliveryByStudentAndAssignment.get(
+          `${student.id}:${assignment.id}`
+        );
+
+        return {
+          assignmentId: assignment.id,
+          status: getDeliveryStatus(delivery),
+        };
+      });
+
+      const approvedCount = statuses.filter((item) => item.status === "Aprobado")
+        .length;
 
       return {
-        assignmentId: assignment.id,
-        status: getDeliveryStatus(delivery),
+        student,
+        statuses,
+        approvedCount,
+        courseState: getStudentCourseState(statuses) as StudentCourseState,
       };
-    });
-
-    const approvedCount = statuses.filter((item) => item.status === "Aprobado")
-      .length;
-
-    return {
-      student,
-      statuses,
-      approvedCount,
-      courseState: getStudentCourseState(statuses) as StudentCourseState,
-    };
-  });
+    })
+    .sort((first, second) =>
+      getStudentDisplayName(first.student).localeCompare(
+        getStudentDisplayName(second.student),
+        "es",
+        { sensitivity: "base" }
+      )
+    );
 
   const statusTotals = rows.reduce(
     (totals, row) => {
