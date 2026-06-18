@@ -9,6 +9,7 @@ export const dynamic = "force-dynamic";
 
 type CourseStatus =
   | "Aprobado"
+  | "Desaprobado"
   | "Evaluacion pendiente"
   | "Entrega pendiente"
   | "Reenvio pendiente";
@@ -25,10 +26,13 @@ function getDeliveryStatus(delivery?: Delivery): CourseStatus {
 
   if (
     delivery.status === "published" &&
-    (delivery.verdict === "Corregir y reenviar" ||
-      delivery.verdict === "Desaprobado")
+    delivery.verdict === "Corregir y reenviar"
   ) {
     return "Reenvio pendiente";
+  }
+
+  if (delivery.status === "published" && delivery.verdict === "Desaprobado") {
+    return "Desaprobado";
   }
 
   return "Evaluacion pendiente";
@@ -128,6 +132,7 @@ export default async function DashboardCursadaPage() {
     },
     {
       Aprobado: 0,
+      Desaprobado: 0,
       "Evaluacion pendiente": 0,
       "Entrega pendiente": 0,
       "Reenvio pendiente": 0,
@@ -150,7 +155,7 @@ export default async function DashboardCursadaPage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 lg:grid-cols-7 gap-3">
           <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg px-4 py-3">
             <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
               {students.length}
@@ -190,6 +195,7 @@ export default async function DashboardCursadaPage() {
           </h2>
           <p className="text-sm text-zinc-500 dark:text-zinc-400">
             La evaluacion pendiente indica una entrega enviada sin devolucion publicada.
+            Desaprobado indica una devolucion final sin reenvio.
           </p>
         </div>
 

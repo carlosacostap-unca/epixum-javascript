@@ -5,6 +5,7 @@ import type { Assignment, User } from "@/types";
 
 type CourseStatus =
   | "Aprobado"
+  | "Desaprobado"
   | "Evaluacion pendiente"
   | "Entrega pendiente"
   | "Reenvio pendiente";
@@ -29,6 +30,8 @@ interface DashboardCursadaTableProps {
 const statusStyles: Record<CourseStatus, string> = {
   Aprobado:
     "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
+  Desaprobado:
+    "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300",
   "Evaluacion pendiente":
     "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
   "Entrega pendiente":
