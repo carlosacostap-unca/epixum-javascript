@@ -34,6 +34,11 @@ export default function AssignmentForm({ assignment, onClose, isEmbedded = false
       // Ensure description is included in formData
       formData.set("description", description);
 
+      const dueDate = formData.get("dueDate");
+      if (typeof dueDate === "string" && dueDate) {
+        formData.set("dueDate", new Date(dueDate).toISOString());
+      }
+
       let result;
       if (assignment) {
         // Update assignment
