@@ -229,6 +229,47 @@ export async function deleteClass(classId: string) {
 
 // Assignments
 
+function parseOptionalDateTime(value: FormDataEntryValue | null) {
+  const rawValue = typeof value === 'string' ? value.trim() : '';
+  if (!rawValue) return { rawValue, isoValue: null };
+
+  const date = new Date(rawValue);
+  if (Number.isNaN(date.getTime())) {
+    throw new Error('Fecha límite inválida');
+  }
+
+  return { rawValue, isoValue: date.toISOString() };
+}
+
+function datesMatch(expectedIso: string, actualValue: unknown) {
+  if (typeof actualValue !== 'string' || !actualValue) return false;
+
+  const expectedTime = new Date(expectedIso).getTime();
+  const actualTime = new Date(actualValue).getTime();
+
+  return !Number.isNaN(actualTime) && Math.abs(expectedTime - actualTime) < 1000;
+}
+
+async function assertAssignmentDueDatePersisted(pb: any, assignmentId: string, expectedDueDate: string | null) {
+  const savedAssignment = await pb.collection('assignments').getOne(assignmentId);
+
+  if (expectedDueDate && !datesMatch(expectedDueDate, savedAssignment.dueDate)) {
+    return {
+      success: false,
+      error: 'El trabajo se guardó, pero PocketBase no persistió la fecha límite. Verificá que la colección assignments tenga un campo Date llamado dueDate.',
+    };
+  }
+
+  if (expectedDueDate === null && savedAssignment.dueDate) {
+    return {
+      success: false,
+      error: 'El trabajo se guardó, pero PocketBase no eliminó la fecha límite.',
+    };
+  }
+
+  return { success: true };
+}
+
 export async function createAssignment(formData: FormData) {
   const pb = await createServerClient();
   const user = pb.authStore.model;
@@ -239,7 +280,6 @@ export async function createAssignment(formData: FormData) {
 
   const title = formData.get('title') as string;
   const description = formData.get('description') as string;
-  const dueDate = formData.get('dueDate') as string;
   const systemPrompt = formData.get('systemPrompt') as string;
 
   if (!title) {
@@ -247,22 +287,30 @@ export async function createAssignment(formData: FormData) {
   }
 
   try {
+    const dueDate = parseOptionalDateTime(formData.get('dueDate'));
     const data: any = {
       title,
       description,
       systemPrompt: systemPrompt || "",
     };
-    if (dueDate) data.dueDate = new Date(dueDate).toISOString();
+    if (dueDate.isoValue) data.dueDate = dueDate.isoValue;
     
-    await pb.collection('assignments').create(data);
+    const assignment = await pb.collection('assignments').create(data);
+
+    if (dueDate.isoValue) {
+      const persisted = await assertAssignmentDueDatePersisted(pb, assignment.id, dueDate.isoValue);
+      if (!persisted.success) return persisted;
+    }
+
     revalidatePath('/');
+    revalidatePath('/assignments');
     return { success: true };
   } catch (error: any) {
     console.error('Failed to create assignment:', error);
     if (error.response?.data) {
       console.error('PocketBase validation errors:', JSON.stringify(error.response.data, null, 2));
     }
-    return { success: false, error: 'Failed to create assignment' };
+    return { success: false, error: error.message || 'Failed to create assignment' };
   }
 }
 
@@ -276,20 +324,24 @@ export async function updateAssignment(assignmentId: string, formData: FormData)
 
   const title = formData.get('title') as string;
   const description = formData.get('description') as string;
-  const dueDate = formData.get('dueDate') as string;
   const systemPrompt = formData.get('systemPrompt') as string;
 
   try {
+    const dueDate = parseOptionalDateTime(formData.get('dueDate'));
     const data: any = {
       title,
       description,
       systemPrompt: systemPrompt || "",
+      dueDate: dueDate.isoValue,
     };
-    if (dueDate) data.dueDate = new Date(dueDate).toISOString();
 
     await pb.collection('assignments').update(assignmentId, data);
+
+    const persisted = await assertAssignmentDueDatePersisted(pb, assignmentId, dueDate.isoValue);
+    if (!persisted.success) return persisted;
     
     revalidatePath('/');
+    revalidatePath('/assignments');
     revalidatePath(`/assignments/${assignmentId}`);
     return { success: true };
   } catch (error: any) {
@@ -297,7 +349,7 @@ export async function updateAssignment(assignmentId: string, formData: FormData)
     if (error.response?.data) {
       console.error('PocketBase validation errors:', JSON.stringify(error.response.data, null, 2));
     }
-    return { success: false, error: 'Failed to update assignment' };
+    return { success: false, error: error.message || 'Failed to update assignment' };
   }
 }
 
