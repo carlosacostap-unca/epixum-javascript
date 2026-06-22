@@ -10,7 +10,7 @@ type CourseStatus =
   | "Entrega pendiente"
   | "Reenvio pendiente";
 type StudentCourseState = "OK" | "Fuera de carrera" | "Complicado";
-type ViewMode = "all" | "by-state";
+type ViewMode = "all" | "by-state" | "review";
 
 interface DashboardRow {
   student: User;
@@ -70,6 +70,19 @@ function getStudentSearchText(student: User) {
   );
 }
 
+function needsReview(row: DashboardRow, assignmentCount: number) {
+  if (assignmentCount === 0) {
+    return false;
+  }
+
+  const hasEveryAssignmentApproved = row.approvedCount === assignmentCount;
+  const hasNoDeliveries = row.statuses.every(
+    (item) => item.status === "Entrega pendiente"
+  );
+
+  return !hasEveryAssignmentApproved && !hasNoDeliveries;
+}
+
 export default function DashboardCursadaTable({
   assignments,
   rows,
@@ -95,8 +108,16 @@ export default function DashboardCursadaTable({
       })),
     [filteredRows]
   );
+  const reviewRows = useMemo(
+    () => filteredRows.filter((row) => needsReview(row, assignments.length)),
+    [assignments.length, filteredRows]
+  );
   const visibleRows =
-    viewMode === "all" ? filteredRows : groupedRows.flatMap((group) => group.rows);
+    viewMode === "all"
+      ? filteredRows
+      : viewMode === "review"
+        ? reviewRows
+        : groupedRows.flatMap((group) => group.rows);
 
   return (
     <>
@@ -166,6 +187,17 @@ export default function DashboardCursadaTable({
               >
                 Por estado
               </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("review")}
+                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                  viewMode === "review"
+                    ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-sm"
+                    : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
+                }`}
+              >
+                Revisión
+              </button>
             </div>
           </div>
         </div>
@@ -181,6 +213,15 @@ export default function DashboardCursadaTable({
                 <span>{groupedRows.find((group) => group.state === state)?.rows.length || 0}</span>
               </span>
             ))}
+          </div>
+        )}
+
+        {viewMode === "review" && (
+          <div className="mt-4">
+            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+              Necesitan revision
+              <span>{reviewRows.length}</span>
+            </span>
           </div>
         )}
 
@@ -236,7 +277,9 @@ export default function DashboardCursadaTable({
                   colSpan={assignments.length + 2}
                   className="px-6 py-8 text-center text-sm text-zinc-500 dark:text-zinc-400"
                 >
-                  No hay alumnos que coincidan con la busqueda.
+                  {viewMode === "review"
+                    ? "No hay alumnos que necesiten revision."
+                    : "No hay alumnos que coincidan con la busqueda."}
                 </td>
               </tr>
             ) : viewMode === "by-state" ? (
