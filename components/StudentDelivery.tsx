@@ -31,13 +31,14 @@ export default function StudentDelivery({ assignmentId, delivery, studentName, a
 
   const isDelivered = !!delivery;
   const isPastDue = dueDate ? new Date() > new Date(dueDate) : false;
+  const isLateDelivery = !!(delivery?.created && dueDate && new Date(delivery.created) > new Date(dueDate));
   const isFailedFinal = delivery?.status === 'published' && delivery.verdict === 'Desaprobado';
-  const cannotEdit = isPastDue || isFailedFinal;
+  const cannotEdit = isFailedFinal;
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setError(null);
     if (cannotEdit) {
-      setError(isFailedFinal ? "La entrega fue desaprobada y no admite reenvío" : "El plazo de entrega ha finalizado");
+      setError("La entrega fue desaprobada y no admite reenvío");
       return;
     }
 
@@ -91,7 +92,7 @@ export default function StudentDelivery({ assignmentId, delivery, studentName, a
     setError(null);
 
     if (cannotEdit) {
-      setError(isFailedFinal ? "La entrega fue desaprobada y no admite reenvío" : "El plazo de entrega ha finalizado");
+      setError("La entrega fue desaprobada y no admite reenvío");
       return;
     }
     
@@ -191,7 +192,7 @@ export default function StudentDelivery({ assignmentId, delivery, studentName, a
     e.preventDefault();
     
     if (cannotEdit) {
-      setError(isFailedFinal ? "La entrega fue desaprobada y no admite reenvío" : "El plazo de entrega ha finalizado");
+      setError("La entrega fue desaprobada y no admite reenvío");
       return;
     }
 
@@ -393,6 +394,12 @@ export default function StudentDelivery({ assignmentId, delivery, studentName, a
         </span>
       </div>
 
+      {!isDelivered && isPastDue && (
+        <div className="mb-4 p-4 text-amber-800 bg-amber-50 border border-amber-200 rounded-lg dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-800">
+          El plazo de entrega ya finalizó. Podés enviar el trabajo, pero quedará marcado como fuera de plazo.
+        </div>
+      )}
+
       {error && (
         <div className="mb-4 p-4 text-red-700 bg-red-100 rounded-lg dark:bg-red-900 dark:text-red-300">
           <p>{error}</p>
@@ -431,6 +438,11 @@ export default function StudentDelivery({ assignmentId, delivery, studentName, a
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                     <span>Entregado el <strong>{new Date(delivery.created).toLocaleDateString()}</strong> a las <strong>{new Date(delivery.created).toLocaleTimeString()}</strong></span>
                 </div>
+                {isLateDelivery && (
+                  <div className="mt-3 inline-flex items-center rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
+                    Entregado fuera de plazo
+                  </div>
+                )}
             </div>
 
             <button
@@ -443,7 +455,7 @@ export default function StudentDelivery({ assignmentId, delivery, studentName, a
                 }`}
             >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                {isFailedFinal ? "Desaprobado" : isPastDue ? "Plazo finalizado" : "Modificar Entrega"}
+                {isFailedFinal ? "Desaprobado" : "Modificar Entrega"}
             </button>
           </div>
 
@@ -556,7 +568,7 @@ export default function StudentDelivery({ assignmentId, delivery, studentName, a
                     <>
                         {cannotEdit ? (
                             <p className="text-sm text-red-500 font-medium">
-                                {isFailedFinal ? "La entrega fue desaprobada. No se admiten nuevos envíos." : "El plazo de entrega ha finalizado. No se admiten más envíos."}
+                                La entrega fue desaprobada. No se admiten nuevos envíos.
                             </p>
                         ) : (
                             <>
@@ -573,6 +585,11 @@ export default function StudentDelivery({ assignmentId, delivery, studentName, a
                                 <p className="text-xs text-zinc-500">
                                     Se comprimirá automáticamente en un archivo ZIP
                                 </p>
+                                {isPastDue && (
+                                  <p className="text-xs font-medium text-amber-600 dark:text-amber-400">
+                                    Esta entrega se registrará fuera de plazo.
+                                  </p>
+                                )}
                             </>
                         )}
                     </>

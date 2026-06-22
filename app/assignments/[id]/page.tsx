@@ -49,7 +49,7 @@ export default async function AssignmentPage({ params }: { params: Promise<{ id:
     return (
         <div className="container mx-auto p-8 min-h-screen space-y-8">
             <AssignmentDetailsManagement user={user} assignment={assignment} links={links} inquiries={inquiries} />
-            <TeacherDeliveries deliveries={deliveries} assignmentId={assignment.id} />
+            <TeacherDeliveries deliveries={deliveries} assignmentId={assignment.id} dueDate={assignment.dueDate} />
         </div>
     );
   }

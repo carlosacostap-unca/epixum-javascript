@@ -121,10 +121,16 @@ export default async function DashboardCursadaPage() {
         const delivery = deliveryByStudentAndAssignment.get(
           `${student.id}:${assignment.id}`
         );
+        const isLateDelivery = !!(
+          delivery?.created &&
+          assignment.dueDate &&
+          new Date(delivery.created) > new Date(assignment.dueDate)
+        );
 
         return {
           assignmentId: assignment.id,
           status: getDeliveryStatus(delivery),
+          isLateDelivery,
         };
       });
 

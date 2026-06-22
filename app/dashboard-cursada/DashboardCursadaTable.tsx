@@ -17,6 +17,7 @@ interface DashboardRow {
   statuses: {
     assignmentId: string;
     status: CourseStatus;
+    isLateDelivery?: boolean;
   }[];
   approvedCount: number;
   courseState: StudentCourseState;
@@ -364,14 +365,24 @@ function StudentRow({
         const status =
           statuses.find((item) => item.assignmentId === assignment.id)?.status ||
           "Entrega pendiente";
+        const isLateDelivery = !!statuses.find(
+          (item) => item.assignmentId === assignment.id
+        )?.isLateDelivery;
 
         return (
           <td key={assignment.id} className="px-4 py-4">
-            <span
-              className={`inline-flex whitespace-nowrap px-2.5 py-1 rounded-full text-xs font-medium ${statusStyles[status]}`}
-            >
-              {status}
-            </span>
+            <div className="flex flex-col items-start gap-1">
+              <span
+                className={`inline-flex whitespace-nowrap px-2.5 py-1 rounded-full text-xs font-medium ${statusStyles[status]}`}
+              >
+                {status}
+              </span>
+              {isLateDelivery && (
+                <span className="inline-flex whitespace-nowrap rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
+                  Fuera de plazo
+                </span>
+              )}
+            </div>
           </td>
         );
       })}

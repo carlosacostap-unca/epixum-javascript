@@ -507,12 +507,6 @@ export async function createDelivery(formData: FormData) {
   }
 
   try {
-    // Check deadline
-    const assignment = await pb.collection('assignments').getOne(assignmentId);
-    if (assignment.dueDate && new Date() > new Date(assignment.dueDate)) {
-        return { success: false, error: 'El plazo de entrega ha finalizado' };
-    }
-
     const data: Record<string, any> = {
       assignment: assignmentId,
       student: user.id,
@@ -552,16 +546,11 @@ export async function updateDelivery(deliveryId: string, formData: FormData) {
   }
 
   try {
-    // Check deadline and final evaluation state
+    // Check final evaluation state
     const currentDelivery = await pb.collection('deliveries').getOne(deliveryId);
-    const assignment = await pb.collection('assignments').getOne(currentDelivery.assignment);
 
     if (currentDelivery.student !== user.id && user.role !== 'admin') {
         return { success: false, error: 'Unauthorized' };
-    }
-    
-    if (assignment.dueDate && new Date() > new Date(assignment.dueDate)) {
-        return { success: false, error: 'El plazo de entrega ha finalizado' };
     }
 
     if (currentDelivery.status === 'published' && currentDelivery.verdict === 'Desaprobado') {

@@ -25,6 +25,7 @@ export default async function DeliveryDetailsPage({ params }: { params: Promise<
 
   const student = delivery.expand?.student;
   const pbUrl = process.env.NEXT_PUBLIC_POCKETBASE_URL?.replace(/\/$/, "") || "";
+  const isLateDelivery = !!(assignment.dueDate && new Date(delivery.created) > new Date(assignment.dueDate));
 
   return (
     <div className="container mx-auto p-8 min-h-screen max-w-4xl">
@@ -44,6 +45,11 @@ export default async function DeliveryDetailsPage({ params }: { params: Promise<
           </div>
           <div className="text-sm text-zinc-500 dark:text-zinc-400">
             Fecha de entrega: <FormattedDate date={delivery.created} showTime={true} />
+            {isLateDelivery && (
+              <span className="ml-2 inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
+                Fuera de plazo
+              </span>
+            )}
           </div>
         </div>
 

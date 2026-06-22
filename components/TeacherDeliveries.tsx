@@ -8,9 +8,10 @@ import Link from "next/link";
 interface TeacherDeliveriesProps {
   deliveries: Delivery[];
   assignmentId: string;
+  dueDate?: string;
 }
 
-export default function TeacherDeliveries({ deliveries, assignmentId }: TeacherDeliveriesProps) {
+export default function TeacherDeliveries({ deliveries, assignmentId, dueDate }: TeacherDeliveriesProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   
@@ -88,6 +89,7 @@ export default function TeacherDeliveries({ deliveries, assignmentId }: TeacherD
                 const student = delivery.expand?.student;
                 const studentName = student?.name || "Estudiante desconocido";
                 const studentEmail = student?.email || "Sin email";
+                const isLateDelivery = !!(dueDate && new Date(delivery.created) > new Date(dueDate));
                 
                 return (
                 <tr key={delivery.id}>
@@ -128,7 +130,12 @@ export default function TeacherDeliveries({ deliveries, assignmentId }: TeacherD
                     </button>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">
-                    {new Date(delivery.created).toLocaleDateString()}
+                    <div>{new Date(delivery.created).toLocaleDateString()}</div>
+                    {isLateDelivery && (
+                      <span className="mt-1 inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
+                        Fuera de plazo
+                      </span>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
                     {delivery.status === 'published' ? (
