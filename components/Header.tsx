@@ -81,6 +81,8 @@ export default function Header() {
     router.refresh();
   };
 
+  const canViewCourseDashboard = user?.role === 'docente' || user?.role === 'admin';
+
   return (
     <header className="bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 py-4 px-6 mb-6">
       <div className="container mx-auto flex justify-between items-center">
@@ -95,6 +97,14 @@ export default function Header() {
           <span>Epixum - Javascript</span>
         </Link>
         <div className="flex items-center gap-4">
+          {canViewCourseDashboard && (
+            <Link
+              href="/dashboard-cursada"
+              className="text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-blue-500 dark:hover:text-blue-400 transition-colors"
+            >
+              Dashboard Cursada
+            </Link>
+          )}
           {user?.role === 'admin' && (
             <Link 
               href="/admin/users" 

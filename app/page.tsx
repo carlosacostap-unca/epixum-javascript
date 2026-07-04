@@ -8,6 +8,8 @@ export const dynamic = 'force-dynamic';
 
 export default async function Home() {
   const user = await getCurrentUser();
+  const isAdmin = user?.role === 'admin';
+  const isCourseManager = user?.role === 'docente' || isAdmin;
 
   // 1. Student View (Navigation Cards)
   if (user && user.role === 'estudiante') {
@@ -52,12 +54,12 @@ export default async function Home() {
   }
 
   // 2. Teacher / Admin View (Navigation Cards)
-  if (user && (user.role === 'docente' || user.role === 'admin')) {
+  if (user && isCourseManager) {
     return (
       <div className="container mx-auto p-8 min-h-screen">
           <header className="mb-12 text-center">
               <h1 className="text-4xl font-extrabold tracking-tight lg:text-5xl mb-4">
-              Panel Docente
+              {isAdmin ? 'Panel Administrativo' : 'Panel Docente'}
               </h1>
               <p className="text-xl text-zinc-500 dark:text-zinc-400">
               Gestiona el curso, las clases y los trabajos prácticos.
@@ -94,8 +96,18 @@ export default async function Home() {
                       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" /></svg>
                   </div>
                   <h2 className="text-2xl font-bold mb-2 text-zinc-900 dark:text-white">Dashboard Cursada</h2>
-                  <p className="text-zinc-500 dark:text-zinc-400">Visualiza alumnos y trabajos practicos aprobados.</p>
+                  <p className="text-zinc-500 dark:text-zinc-400">Visualiza alumnos, trabajos practicos y estado de avance.</p>
               </Link>
+
+              {isAdmin && (
+                <Link href="/admin/users" className="block p-8 bg-white dark:bg-zinc-900 rounded-2xl shadow-sm border border-zinc-200 dark:border-zinc-800 hover:border-indigo-500 hover:shadow-md transition-all group">
+                    <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a4 4 0 00-4-4h-1M9 20H4v-2a4 4 0 014-4h1m0-4a4 4 0 110-8 4 4 0 010 8zm8 0a4 4 0 100-8 4 4 0 000 8z" /></svg>
+                    </div>
+                    <h2 className="text-2xl font-bold mb-2 text-zinc-900 dark:text-white">Administrar Usuarios</h2>
+                    <p className="text-zinc-500 dark:text-zinc-400">Gestiona roles y accesos de los usuarios de la plataforma.</p>
+                </Link>
+              )}
           </div>
       </div>
     );
