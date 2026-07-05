@@ -29,7 +29,7 @@ export default async function ManageApprovedPage() {
   ).length;
 
   return (
-    <div className="container mx-auto p-8 min-h-screen">
+    <div className="w-full max-w-none px-4 py-8 sm:px-6 lg:px-8 min-h-screen">
       <Link href="/" className="text-blue-500 hover:underline mb-8 inline-block">
         &larr; Volver al panel
       </Link>
