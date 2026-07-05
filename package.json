@@ -9,6 +9,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "schema:user-approved-module": "node scripts/ensure_user_approved_module_field.mjs",
     "lint": "eslint"
   },
   "dependencies": {

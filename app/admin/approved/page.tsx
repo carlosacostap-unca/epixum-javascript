@@ -3,14 +3,14 @@ import { redirect } from "next/navigation";
 import { getAllAssignments, getAllDeliveries, getStudents } from "@/lib/data";
 import { buildCourseDashboard, type CourseStatus } from "@/lib/course-dashboard";
 import { getCurrentUser } from "@/lib/pocketbase-server";
-import DashboardCursadaTable from "./DashboardCursadaTable";
+import DashboardCursadaTable from "@/app/dashboard-cursada/DashboardCursadaTable";
 
 export const dynamic = "force-dynamic";
 
-export default async function DashboardCursadaPage() {
+export default async function ManageApprovedPage() {
   const user = await getCurrentUser();
 
-  if (!user || (user.role !== "docente" && user.role !== "admin")) {
+  if (!user || user.role !== "admin") {
     redirect("/");
   }
 
@@ -24,6 +24,9 @@ export default async function DashboardCursadaPage() {
     assignments,
     deliveries
   );
+  const approvedModuleCount = students.filter(
+    (student) => student.approvedModule
+  ).length;
 
   return (
     <div className="container mx-auto p-8 min-h-screen">
@@ -34,14 +37,15 @@ export default async function DashboardCursadaPage() {
       <div className="flex flex-col gap-6 mb-8">
         <div>
           <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-100">
-            Dashboard Cursada
+            Gestionar Aprobados
           </h1>
           <p className="text-zinc-500 dark:text-zinc-400 mt-2">
-            Estado de cada trabajo practico por alumno.
+            Controla el estado de cursada y marca que alumnos aprobaron el
+            modulo.
           </p>
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-7 gap-3">
+        <div className="grid grid-cols-2 lg:grid-cols-8 gap-3">
           <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg px-4 py-3">
             <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
               {students.length}
@@ -56,6 +60,14 @@ export default async function DashboardCursadaPage() {
             </div>
             <div className="text-xs uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
               Trabajos
+            </div>
+          </div>
+          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg px-4 py-3">
+            <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
+              {approvedModuleCount}
+            </div>
+            <div className="text-xs uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+              Aprobados modulo
             </div>
           </div>
           {(Object.keys(statusTotals) as CourseStatus[]).map((status) => (
@@ -77,15 +89,19 @@ export default async function DashboardCursadaPage() {
       <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden">
         <div className="px-6 py-4 border-b border-zinc-200 dark:border-zinc-800 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
           <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
-            Seguimiento por alumno
+            Seguimiento y aprobacion del modulo
           </h2>
           <p className="text-sm text-zinc-500 dark:text-zinc-400">
-            La evaluacion pendiente indica una entrega enviada sin devolucion publicada.
-            Desaprobado indica una devolucion final sin reenvio.
+            El ultimo campo guarda en la base si el alumno esta aprobado en el
+            modulo.
           </p>
         </div>
 
-        <DashboardCursadaTable assignments={sortedAssignments} rows={rows} />
+        <DashboardCursadaTable
+          assignments={sortedAssignments}
+          rows={rows}
+          showModuleApprovalColumn
+        />
       </div>
     </div>
   );

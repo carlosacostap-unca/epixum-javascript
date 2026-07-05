@@ -17,6 +17,15 @@ Para que la aplicación funcione correctamente, necesitas crear las siguientes c
 - **dni**: Text
 - **birthDate**: Date
 - **phone**: Text
+- **approvedModule**: Bool (default: false). Indica si el alumno fue aprobado en el modulo desde la pantalla admin `Gestionar Aprobados`.
+
+Puede crearse/actualizarse con:
+
+```bash
+npm run schema:user-approved-module
+```
+
+El script requiere `NEXT_PUBLIC_POCKETBASE_URL` y credenciales de superusuario/admin en `POCKETBASE_SUPERUSER_EMAIL` + `POCKETBASE_SUPERUSER_PASSWORD` (o variantes `POCKETBASE_ADMIN_*` / `PB_*`).
   - Esto permitirá identificar los permisos de cada usuario.
 
 ### API Rules (Reglas de Acceso)

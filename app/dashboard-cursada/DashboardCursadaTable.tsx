@@ -1,31 +1,16 @@
 "use client";
 
 import { Fragment, useMemo, useState } from "react";
+import ModuleApprovalToggle from "@/components/ModuleApprovalToggle";
 import type { Assignment, User } from "@/types";
+import type { CourseStatus, DashboardRow, StudentCourseState } from "@/lib/course-dashboard";
 
-type CourseStatus =
-  | "Aprobado"
-  | "Desaprobado"
-  | "Evaluacion pendiente"
-  | "Entrega pendiente"
-  | "Reenvio pendiente";
-type StudentCourseState = "OK" | "Fuera de carrera" | "Complicado";
 type ViewMode = "all" | "by-state" | "review";
-
-interface DashboardRow {
-  student: User;
-  statuses: {
-    assignmentId: string;
-    status: CourseStatus;
-    isLateDelivery?: boolean;
-  }[];
-  approvedCount: number;
-  courseState: StudentCourseState;
-}
 
 interface DashboardCursadaTableProps {
   assignments: Assignment[];
   rows: DashboardRow[];
+  showModuleApprovalColumn?: boolean;
 }
 
 const statusStyles: Record<CourseStatus, string> = {
@@ -87,10 +72,12 @@ function needsReview(row: DashboardRow, assignmentCount: number) {
 export default function DashboardCursadaTable({
   assignments,
   rows,
+  showModuleApprovalColumn = false,
 }: DashboardCursadaTableProps) {
   const [studentSearch, setStudentSearch] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("all");
   const normalizedSearch = normalizeSearch(studentSearch);
+  const tableColSpan = assignments.length + (showModuleApprovalColumn ? 3 : 2);
 
   const filteredRows = useMemo(() => {
     if (!normalizedSearch) {
@@ -251,13 +238,18 @@ export default function DashboardCursadaTable({
               <th className="px-4 py-3 text-right text-xs font-medium text-zinc-500 dark:text-zinc-300 uppercase tracking-wider">
                 Aprobados
               </th>
+              {showModuleApprovalColumn && (
+                <th className="px-4 py-3 text-right text-xs font-medium text-zinc-500 dark:text-zinc-300 uppercase tracking-wider min-w-48">
+                  Aprobado en modulo
+                </th>
+              )}
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
             {rows.length === 0 ? (
               <tr>
                 <td
-                  colSpan={assignments.length + 2}
+                  colSpan={tableColSpan}
                   className="px-6 py-8 text-center text-sm text-zinc-500 dark:text-zinc-400"
                 >
                   No hay alumnos registrados.
@@ -266,7 +258,7 @@ export default function DashboardCursadaTable({
             ) : assignments.length === 0 ? (
               <tr>
                 <td
-                  colSpan={2}
+                  colSpan={tableColSpan}
                   className="px-6 py-8 text-center text-sm text-zinc-500 dark:text-zinc-400"
                 >
                   No hay trabajos practicos registrados.
@@ -275,7 +267,7 @@ export default function DashboardCursadaTable({
             ) : visibleRows.length === 0 ? (
               <tr>
                 <td
-                  colSpan={assignments.length + 2}
+                  colSpan={tableColSpan}
                   className="px-6 py-8 text-center text-sm text-zinc-500 dark:text-zinc-400"
                 >
                   {viewMode === "review"
@@ -288,7 +280,7 @@ export default function DashboardCursadaTable({
                 <Fragment key={group.state}>
                   <tr>
                     <td
-                      colSpan={assignments.length + 2}
+                      colSpan={tableColSpan}
                       className="bg-zinc-100 dark:bg-zinc-800 px-6 py-3 text-sm font-semibold text-zinc-900 dark:text-zinc-100"
                     >
                       <span
@@ -302,7 +294,7 @@ export default function DashboardCursadaTable({
                   {group.rows.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={assignments.length + 2}
+                        colSpan={tableColSpan}
                         className="px-6 py-4 text-sm text-zinc-500 dark:text-zinc-400"
                       >
                         No hay alumnos en este estado.
@@ -314,6 +306,7 @@ export default function DashboardCursadaTable({
                         key={row.student.id}
                         assignments={assignments}
                         row={row}
+                        showModuleApprovalColumn={showModuleApprovalColumn}
                       />
                     ))
                   )}
@@ -325,6 +318,7 @@ export default function DashboardCursadaTable({
                   key={row.student.id}
                   assignments={assignments}
                   row={row}
+                  showModuleApprovalColumn={showModuleApprovalColumn}
                 />
               ))
             )}
@@ -338,18 +332,21 @@ export default function DashboardCursadaTable({
 function StudentRow({
   assignments,
   row,
+  showModuleApprovalColumn,
 }: {
   assignments: Assignment[];
   row: DashboardRow;
+  showModuleApprovalColumn: boolean;
 }) {
   const { student, statuses, approvedCount, courseState } = row;
+  const studentName = student.name || student.username || "Alumno sin nombre";
 
   return (
     <tr>
       <td className="sticky left-0 z-10 bg-white dark:bg-zinc-900 px-6 py-4 whitespace-nowrap">
         <div className="flex items-center gap-2">
           <div className="font-medium text-zinc-900 dark:text-zinc-100">
-            {student.name || student.username || "Alumno sin nombre"}
+            {studentName}
           </div>
           <span
             className={`inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium ${courseStateStyles[courseState]}`}
@@ -391,6 +388,15 @@ function StudentRow({
           {approvedCount}
         </span>
       </td>
+      {showModuleApprovalColumn && (
+        <td className="px-4 py-4 whitespace-nowrap text-right">
+          <ModuleApprovalToggle
+            userId={student.id}
+            userName={studentName}
+            approved={!!student.approvedModule}
+          />
+        </td>
+      )}
     </tr>
   );
 }

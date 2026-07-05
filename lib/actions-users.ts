@@ -1,7 +1,7 @@
 "use server";
 
 import { createServerClient } from "@/lib/pocketbase-server";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 
 interface UserProfileData {
   firstName?: string;
@@ -58,5 +58,30 @@ export async function updateUserProfile(userId: string, data: UserProfileData) {
   } catch (error: any) {
     console.error("Error updating profile:", error);
     return { success: false, error: error?.message || "Error al actualizar perfil" };
+  }
+}
+
+export async function updateUserApprovedModule(userId: string, approvedModule: boolean) {
+  const pb = await createServerClient();
+  const currentUser = pb.authStore.model;
+
+  if (!currentUser || currentUser.role !== "admin") {
+    return { success: false, error: "No autorizado" };
+  }
+
+  try {
+    await pb.collection("users").update(userId, { approvedModule });
+
+    revalidateTag("users", "max");
+    revalidatePath("/admin/approved");
+    revalidatePath("/dashboard-cursada");
+
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error updating module approval:", error);
+    return {
+      success: false,
+      error: error?.message || "Error al actualizar el aprobado del modulo",
+    };
   }
 }

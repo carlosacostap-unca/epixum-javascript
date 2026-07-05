@@ -106,6 +106,14 @@ export default function Header() {
             </Link>
           )}
           {user?.role === 'admin' && (
+            <Link
+              href="/admin/approved"
+              className="text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-blue-500 dark:hover:text-blue-400 transition-colors"
+            >
+              Gestionar Aprobados
+            </Link>
+          )}
+          {user?.role === 'admin' && (
             <Link 
               href="/admin/users" 
               className="text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-blue-500 dark:hover:text-blue-400 transition-colors"

@@ -19,6 +19,7 @@ export interface User extends BaseModel {
   birthDate?: string;
   phone?: string;
   avatar?: string;
+  approvedModule?: boolean;
   role: UserRole;
 }
 
