@@ -11,6 +11,7 @@ interface DashboardCursadaTableProps {
   assignments: Assignment[];
   rows: DashboardRow[];
   showModuleApprovalColumn?: boolean;
+  showRecommendationColumn?: boolean;
 }
 
 const statusStyles: Record<CourseStatus, string> = {
@@ -73,11 +74,16 @@ export default function DashboardCursadaTable({
   assignments,
   rows,
   showModuleApprovalColumn = false,
+  showRecommendationColumn = false,
 }: DashboardCursadaTableProps) {
   const [studentSearch, setStudentSearch] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("all");
   const normalizedSearch = normalizeSearch(studentSearch);
-  const tableColSpan = assignments.length + (showModuleApprovalColumn ? 3 : 2);
+  const tableColSpan =
+    assignments.length +
+    2 +
+    (showModuleApprovalColumn ? 1 : 0) +
+    (showRecommendationColumn ? 1 : 0);
 
   const filteredRows = useMemo(() => {
     if (!normalizedSearch) {
@@ -243,6 +249,11 @@ export default function DashboardCursadaTable({
                   Aprobado en modulo
                 </th>
               )}
+              {showRecommendationColumn && (
+                <th className="px-4 py-3 text-right text-xs font-medium text-zinc-500 dark:text-zinc-300 uppercase tracking-wider min-w-44">
+                  Recomendacion
+                </th>
+              )}
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
@@ -307,6 +318,7 @@ export default function DashboardCursadaTable({
                         assignments={assignments}
                         row={row}
                         showModuleApprovalColumn={showModuleApprovalColumn}
+                        showRecommendationColumn={showRecommendationColumn}
                       />
                     ))
                   )}
@@ -319,6 +331,7 @@ export default function DashboardCursadaTable({
                   assignments={assignments}
                   row={row}
                   showModuleApprovalColumn={showModuleApprovalColumn}
+                  showRecommendationColumn={showRecommendationColumn}
                 />
               ))
             )}
@@ -333,10 +346,12 @@ function StudentRow({
   assignments,
   row,
   showModuleApprovalColumn,
+  showRecommendationColumn,
 }: {
   assignments: Assignment[];
   row: DashboardRow;
   showModuleApprovalColumn: boolean;
+  showRecommendationColumn: boolean;
 }) {
   const { student, statuses, approvedCount, courseState } = row;
   const studentName = student.name || student.username || "Alumno sin nombre";
@@ -394,6 +409,18 @@ function StudentRow({
             userId={student.id}
             userName={studentName}
             approved={!!student.approvedModule}
+          />
+        </td>
+      )}
+      {showRecommendationColumn && (
+        <td className="px-4 py-4 whitespace-nowrap text-right">
+          <ModuleApprovalToggle
+            userId={student.id}
+            userName={studentName}
+            approved={!!student.recommendation}
+            checkedLabel="Si"
+            field="recommendation"
+            uncheckedLabel="No"
           />
         </td>
       )}

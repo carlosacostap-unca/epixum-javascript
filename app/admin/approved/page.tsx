@@ -27,6 +27,19 @@ export default async function ManageApprovedPage() {
   const approvedModuleCount = students.filter(
     (student) => student.approvedModule
   ).length;
+  const recommendationCount = students.filter(
+    (student) => student.recommendation
+  ).length;
+  const isApprovedModuleFieldAvailable =
+    students.length === 0 ||
+    students.some((student) =>
+      Object.prototype.hasOwnProperty.call(student, "approvedModule")
+    );
+  const isRecommendationFieldAvailable =
+    students.length === 0 ||
+    students.some((student) =>
+      Object.prototype.hasOwnProperty.call(student, "recommendation")
+    );
 
   return (
     <div className="w-full max-w-none px-4 py-8 sm:px-6 lg:px-8 min-h-screen">
@@ -45,7 +58,29 @@ export default async function ManageApprovedPage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-8 gap-3">
+        {!isApprovedModuleFieldAvailable && (
+          <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200">
+            La base de datos todavia no esta devolviendo el campo
+            <span className="font-semibold"> approvedModule</span> en users.
+            Para habilitar el guardado ejecuta
+            <span className="font-semibold">
+              {" "}
+              npm run schema:user-approved-module
+            </span>{" "}
+            con credenciales de superusuario/admin de PocketBase.
+          </div>
+        )}
+
+        {!isRecommendationFieldAvailable && (
+          <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200">
+            La base de datos todavia no esta devolviendo el campo
+            <span className="font-semibold"> recommendation</span> en users.
+            Para habilitar el guardado crea ese campo booleano en la coleccion
+            users.
+          </div>
+        )}
+
+        <div className="grid grid-cols-2 lg:grid-cols-9 gap-3">
           <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg px-4 py-3">
             <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
               {students.length}
@@ -68,6 +103,14 @@ export default async function ManageApprovedPage() {
             </div>
             <div className="text-xs uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
               Aprobados modulo
+            </div>
+          </div>
+          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg px-4 py-3">
+            <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
+              {recommendationCount}
+            </div>
+            <div className="text-xs uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+              Recomendaciones
             </div>
           </div>
           {(Object.keys(statusTotals) as CourseStatus[]).map((status) => (
@@ -101,6 +144,7 @@ export default async function ManageApprovedPage() {
           assignments={sortedAssignments}
           rows={rows}
           showModuleApprovalColumn
+          showRecommendationColumn
         />
       </div>
     </div>

@@ -20,6 +20,7 @@ export interface User extends BaseModel {
   phone?: string;
   avatar?: string;
   approvedModule?: boolean;
+  recommendation?: boolean;
   role: UserRole;
 }
 

@@ -66,10 +66,12 @@ async function authenticate(baseUrl, identity, password) {
   throw lastError || new Error("No se pudo autenticar contra PocketBase");
 }
 
-function makeBooleanField() {
+const expectedBooleanFields = ["approvedModule", "recommendation"];
+
+function makeBooleanField(name, index) {
   return {
-    id: `bool${Date.now().toString().slice(-10)}`,
-    name: "approvedModule",
+    id: `bool${Date.now().toString().slice(-10)}${index}`,
+    name,
     type: "bool",
     system: false,
     required: false,
@@ -121,12 +123,18 @@ async function main() {
     : "schema";
   const fields = [...(usersCollection[fieldsKey] || [])];
 
-  if (fields.some((field) => field.name === "approvedModule")) {
-    console.log("users.approvedModule ya existe.");
+  const missingFields = expectedBooleanFields.filter(
+    (fieldName) => !fields.some((field) => field.name === fieldName)
+  );
+
+  if (missingFields.length === 0) {
+    console.log("users.approvedModule y users.recommendation ya existen.");
     return;
   }
 
-  fields.push(makeBooleanField());
+  for (const [index, fieldName] of missingFields.entries()) {
+    fields.push(makeBooleanField(fieldName, index));
+  }
 
   await request(`${baseUrl}/api/collections/${usersCollection.id}`, {
     method: "PATCH",
@@ -134,7 +142,7 @@ async function main() {
     body: JSON.stringify({ [fieldsKey]: fields }),
   });
 
-  console.log("Campo users.approvedModule creado correctamente.");
+  console.log(`Campos creados correctamente: ${missingFields.join(", ")}.`);
 }
 
 main().catch((error) => {

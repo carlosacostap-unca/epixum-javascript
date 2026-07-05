@@ -18,6 +18,7 @@ Para que la aplicación funcione correctamente, necesitas crear las siguientes c
 - **birthDate**: Date
 - **phone**: Text
 - **approvedModule**: Bool (default: false). Indica si el alumno fue aprobado en el modulo desde la pantalla admin `Gestionar Aprobados`.
+- **recommendation**: Bool (default: false). Indica si el alumno tiene recomendacion desde la pantalla admin `Gestionar Aprobados`.
 
 Puede crearse/actualizarse con:
 

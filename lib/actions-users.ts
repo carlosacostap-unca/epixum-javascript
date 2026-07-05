@@ -11,6 +11,26 @@ interface UserProfileData {
   phone?: string;
 }
 
+type UserBooleanField = "approvedModule" | "recommendation";
+
+const userBooleanFieldLabels: Record<UserBooleanField, string> = {
+  approvedModule: "aprobado del modulo",
+  recommendation: "recomendacion",
+};
+
+function getPocketBaseErrorMessage(error: any, field: UserBooleanField) {
+  const fieldError = error?.response?.data?.[field]?.message;
+
+  if (fieldError) {
+    return fieldError;
+  }
+
+  return (
+    error?.message ||
+    `Error al actualizar ${userBooleanFieldLabels[field]}`
+  );
+}
+
 export async function updateUserProfile(userId: string, data: UserProfileData) {
   const pb = await createServerClient();
   const currentUser = pb.authStore.model;
@@ -62,6 +82,18 @@ export async function updateUserProfile(userId: string, data: UserProfileData) {
 }
 
 export async function updateUserApprovedModule(userId: string, approvedModule: boolean) {
+  return updateUserBooleanField(userId, "approvedModule", approvedModule);
+}
+
+export async function updateUserRecommendation(userId: string, recommendation: boolean) {
+  return updateUserBooleanField(userId, "recommendation", recommendation);
+}
+
+async function updateUserBooleanField(
+  userId: string,
+  field: UserBooleanField,
+  value: boolean
+) {
   const pb = await createServerClient();
   const currentUser = pb.authStore.model;
 
@@ -70,7 +102,24 @@ export async function updateUserApprovedModule(userId: string, approvedModule: b
   }
 
   try {
-    await pb.collection("users").update(userId, { approvedModule });
+    await pb.collection("users").update(userId, { [field]: value });
+    const savedUser = await pb.collection("users").getOne(userId);
+
+    if (!Object.prototype.hasOwnProperty.call(savedUser, field)) {
+      return {
+        success: false,
+        error:
+          `No se pudo guardar: falta el campo users.${field} en PocketBase. Crea el campo booleano ${field} en la coleccion users.`,
+      };
+    }
+
+    if (savedUser[field] !== value) {
+      return {
+        success: false,
+        error:
+          `PocketBase respondio correctamente, pero el valor ${field} no quedo persistido.`,
+      };
+    }
 
     revalidateTag("users", "max");
     revalidatePath("/admin/approved");
@@ -78,10 +127,10 @@ export async function updateUserApprovedModule(userId: string, approvedModule: b
 
     return { success: true };
   } catch (error: any) {
-    console.error("Error updating module approval:", error);
+    console.error(`Error updating user boolean field ${field}:`, error);
     return {
       success: false,
-      error: error?.message || "Error al actualizar el aprobado del modulo",
+      error: getPocketBaseErrorMessage(error, field),
     };
   }
 }
