@@ -1,10 +1,103 @@
 import { getAllClasses } from "@/lib/data";
-import { Class } from "@/types";
+import { Class, User } from "@/types";
 import Link from "next/link";
-import { getCurrentUser } from "@/lib/pocketbase-server";
+import { createServerClient, getCurrentUser } from "@/lib/pocketbase-server";
 import FormattedDate from "@/components/FormattedDate";
 
 export const dynamic = 'force-dynamic';
+
+async function getFreshStudentUser(user: User) {
+  try {
+    const pb = await createServerClient();
+    return await pb.collection('users').getOne<User>(user.id);
+  } catch (error) {
+    console.error("Failed to refresh student user for result notice", error);
+    return user;
+  }
+}
+
+function getStudentDisplayName(user: User) {
+  const fullName = [user.firstName, user.lastName].filter(Boolean).join(' ').trim();
+  return fullName || user.name || user.username || 'estudiante';
+}
+
+function StudentResultNotice({ user }: { user: User }) {
+  const studentName = getStudentDisplayName(user);
+  const isApproved = user.approvedModule === true;
+  const hasRecommendation = user.recommendation === true;
+
+  if (isApproved) {
+    return (
+      <section className={`max-w-4xl mx-auto mb-8 rounded-2xl border p-6 shadow-sm ${
+        hasRecommendation
+          ? 'border-amber-200 bg-amber-50 text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/20 dark:text-amber-50'
+          : 'border-emerald-200 bg-emerald-50 text-emerald-950 dark:border-emerald-900/60 dark:bg-emerald-950/20 dark:text-emerald-50'
+      }`}>
+        <p className="text-sm font-semibold uppercase tracking-wide">
+          Resultado final del m&oacute;dulo
+        </p>
+        <h2 className="mt-2 text-2xl font-bold">
+          Felicitaciones, {studentName}
+        </h2>
+        <div className="mt-4 space-y-3 text-base leading-7">
+          <p>
+            Queremos felicitarte por haber aprobado este m&oacute;dulo.
+          </p>
+          <p>
+            El tercer m&oacute;dulo comenzar&aacute; el 3 de agosto. Durante la semana del 27 de julio te estaremos incorporando a la plataforma para que puedas cursarlo.
+          </p>
+          {hasRecommendation && (
+            <p>
+              Si bien aprobaste este m&oacute;dulo, te pedimos que por favor repases los contenidos trabajados, porque para el tercer m&oacute;dulo necesitamos que todos estos conceptos est&eacute;n bien asimilados.
+            </p>
+          )}
+          <p>
+            Felicitaciones nuevamente y nos seguimos encontrando en el pr&oacute;ximo m&oacute;dulo.
+          </p>
+          <p>
+            Te enviamos un cordial saludo,<br />
+            <span className="font-semibold">Equipo Docente de la Diplomatura.</span>
+          </p>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className="max-w-4xl mx-auto mb-8 rounded-2xl border border-rose-200 bg-rose-50 p-6 text-rose-950 shadow-sm dark:border-rose-900/60 dark:bg-rose-950/20 dark:text-rose-50">
+      <p className="text-sm font-semibold uppercase tracking-wide">
+        Resultado final del m&oacute;dulo
+      </p>
+      <h2 className="mt-2 text-2xl font-bold">
+        Hola, {studentName}
+      </h2>
+      <div className="mt-4 space-y-3 text-base leading-7">
+        <p>
+          Queremos avisarte cordialmente que no aprobaste este m&oacute;dulo.
+        </p>
+        <p>
+          En esta instancia ya no ser&aacute; posible recursarlo, porque no quedan m&aacute;s cohortes disponibles de la diplomatura.
+        </p>
+        <p>
+          De todos modos, te pedimos que no renuncies a seguir aprendiendo sobre desarrollo de software. Te invitamos a sumarte al{' '}
+          <a
+            href="https://whatsapp.com/channel/0029VbDk6uQ5vKA6yLZFv30Q"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-semibold underline decoration-2 underline-offset-4"
+          >
+            canal de WhatsApp del Nodo Tecnol&oacute;gico
+          </a>
+          {' '}para estar al tanto de nuevos cursos que se van a dictar durante el segundo semestre de este a&ntilde;o.
+        </p>
+        <p>
+          Te enviamos un cordial saludo,<br />
+          <span className="font-semibold">Equipo Docente de la Diplomatura.</span>
+        </p>
+      </div>
+    </section>
+  );
+}
 
 export default async function Home() {
   const user = await getCurrentUser();
@@ -13,6 +106,8 @@ export default async function Home() {
 
   // 1. Student View (Navigation Cards)
   if (user && user.role === 'estudiante') {
+    const student = await getFreshStudentUser(user);
+
     return (
         <div className="container mx-auto p-8 min-h-screen">
             <header className="mb-12 text-center">
@@ -23,6 +118,8 @@ export default async function Home() {
                 Domina el backend con Node.js, paso a paso.
                 </p>
             </header>
+
+            <StudentResultNotice user={student} />
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto mt-12">
                 <Link href="/classes" className="block p-8 bg-white dark:bg-zinc-900 rounded-2xl shadow-sm border border-zinc-200 dark:border-zinc-800 hover:border-blue-500 hover:shadow-md transition-all group">
